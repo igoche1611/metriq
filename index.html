@@ -93,7 +93,7 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <button @click="showUpload = true" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <button @click="triggerUpload" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
                 <i class="ph-bold ph-upload-simple"></i> Import
             </button>
             <button @click="exportData" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -106,6 +106,9 @@
                 <i class="ph-bold ph-file-pdf"></i> Report
             </button>
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20 shadow-inner">JD</div>
+            
+            <!-- HIDDEN FILE INPUT -->
+            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json,.tsv,.txt">
         </div>
     </nav>
 
@@ -175,7 +178,7 @@
                         </div>
                     </div>
 
-                    <!-- Automated Insight Cards (The "Decision Layer") -->
+                    <!-- Automated Insight Cards -->
                     <div v-for="insight in topInsights" class="glass-panel p-5 rounded-2xl border-l-4 relative group hover:bg-white/5 transition-all" :class="insight.type === 'risk' ? 'border-rose-500' : 'border-indigo-500'">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded" :class="insight.type === 'risk' ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'">
@@ -190,7 +193,7 @@
                     </div>
                 </div>
 
-                <!-- MAIN CHART SECTION with Predictive Layer -->
+                <!-- MAIN CHART SECTION -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
                         <div class="flex justify-between items-center mb-4">
@@ -250,7 +253,7 @@
                     </div>
                 </div>
 
-                <!-- Sanitization Bar (Always Visible) -->
+                <!-- Sanitization Bar -->
                 <div class="mb-6 bg-slate-800/50 border border-white/5 p-4 rounded-xl flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <i v-if="missingValueCount > 0" class="ph-fill ph-warning-circle text-rose-500 text-xl"></i>
@@ -420,48 +423,15 @@
 
     </div>
 
-    <!-- FILE UPLOAD MODAL (Loading State Enabled) -->
-    <div v-if="showUpload" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
-        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center relative border border-white/10">
-            
-            <!-- CLOSE BUTTON (Hidden when loading) -->
-            <button v-if="!isUploading" @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-            
-            <!-- LOADING STATE -->
-            <div v-if="isUploading" class="flex flex-col items-center justify-center py-8">
-                <i class="ph-bold ph-spinner animate-spin text-5xl text-indigo-400 mb-6"></i>
-                <h3 class="text-xl font-bold text-white tracking-wide">Ingesting Data Stream</h3>
-                <p class="text-slate-400 text-sm mt-3 animate-pulse">Running normalization engine & validating schema...</p>
-            </div>
-
-            <!-- DEFAULT UPLOAD STATE -->
-            <div v-else>
-                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                    <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
-                <p class="text-slate-400 mb-8">Upload CSV, JSON, or TSV files to feed the Decision Engine.</p>
-                <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json,.tsv,.txt">
-                <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
-                    <i class="ph-bold ph-upload-simple"></i> Select File
-                </button>
-                <p class="mt-4 text-xs text-slate-500 font-mono">AUTO-NORMALIZATION ACTIVE</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- DECISION INTELLIGENCE MODAL (Root Cause & Action) -->
+    <!-- DECISION INTELLIGENCE MODAL -->
     <div v-if="selectedInsight" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
         <div class="glass-panel p-8 rounded-3xl max-w-xl w-full relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
             <button @click="selectedInsight = null" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-            
             <div class="mb-6">
                 <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded mb-2 inline-block">Decision Intelligence</span>
                 <h2 class="text-2xl font-bold text-white">{{ selectedInsight.message }}</h2>
             </div>
-
             <div class="space-y-6 mb-8">
-                <!-- Root Cause -->
                 <div class="flex gap-4">
                     <div class="w-1 bg-indigo-500 rounded-full"></div>
                     <div>
@@ -469,36 +439,11 @@
                         <p class="text-slate-300 text-sm">{{ selectedInsight.rootCause }}</p>
                     </div>
                 </div>
-
-                <!-- Recommendation -->
                 <div class="p-4 bg-white/5 rounded-xl border border-white/5">
                     <h4 class="font-bold text-white text-sm mb-1"><i class="ph-fill ph-lightbulb text-yellow-400 mr-2"></i>Recommended Action</h4>
                     <p class="text-slate-300 text-sm">{{ selectedInsight.recommendation }}</p>
                 </div>
-
-                <!-- Impact Grid -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 bg-white/5 rounded-xl text-center">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Expected Impact</p>
-                        <p class="text-lg font-bold text-emerald-400">{{ selectedInsight.impact }}</p>
-                    </div>
-                    <div class="p-4 bg-white/5 rounded-xl text-center">
-                        <p class="text-xs text-slate-500 font-bold uppercase">AI Confidence</p>
-                        <p class="text-lg font-bold text-white">{{ selectedInsight.confidence }}%</p>
-                    </div>
-                </div>
             </div>
-
-            <!-- Accountability Input -->
-            <div class="mb-4">
-                <label class="text-xs text-slate-500 font-bold uppercase mb-2 block">Assign Owner</label>
-                <select class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
-                    <option>Me (Current User)</option>
-                    <option>Department Lead</option>
-                    <option>External Consultant</option>
-                </select>
-            </div>
-
             <button @click="commitAction" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
                 <i class="ph-bold ph-check-square"></i> Commit & Track Result
             </button>
@@ -516,8 +461,6 @@
                 view: 'dashboard',
                 industry: 'SaaS',
                 privacyMode: false,
-                showUpload: false,
-                isUploading: false,
                 isThinking: false,
                 prompt: '',
                 healthScore: 78,
@@ -584,10 +527,8 @@
             // THE WATCHER: Anytime gridData changes (via AI, Upload, or Sector), update the chart
             gridData: {
                 handler() {
-                    // Prevent updates during bulk upload
-                    if(!this.isUploading) {
-                        this.updateChartFromGrid();
-                    }
+                    // Update Charts whenever Grid Data changes
+                    this.updateChartFromGrid();
                 },
                 deep: true
             },
@@ -602,6 +543,9 @@
             });
         },
         methods: {
+            triggerUpload() {
+                this.$refs.fileInput.click();
+            },
             setIndustry(type) {
                 this.industry = type;
                 this.generateSectorData();
@@ -747,12 +691,10 @@
                 const file = event.target.files[0];
                 if (!file) return;
                 
-                // SET LOADING STATE
-                this.isUploading = true;
-
+                // NO LOADING STATE VISIBLE TO PREVENT HANGING
+                // Process immediately
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    // Removed artificial delay for performance
                     try {
                         const text = e.target.result;
                         const lines = text.trim().split('\n').filter(l => l);
@@ -789,12 +731,9 @@
                         ];
 
                         console.log("File loaded.");
-                        this.isUploading = false;
-                        this.showUpload = false;
                         if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 
                     } catch(err) {
                         alert("Error: " + err.message);
-                        this.isUploading = false;
                     }
                 };
                 reader.readAsText(file);

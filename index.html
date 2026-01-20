@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metriq Nexus | Analytics</title>
+    <title>Metriq Zenith | Decision Intelligence</title>
     
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,7 +13,7 @@
             theme: {
                 extend: {
                     colors: {
-                        nexus: { 900: '#0f172a', 800: '#1e293b', accent: '#38bdf8', glow: '#0ea5e9' }
+                        zenith: { 900: '#020617', 800: '#0f172a', accent: '#6366f1', glow: '#818cf8', success: '#10b981', danger: '#f43f5e' }
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
                 }
@@ -21,94 +21,77 @@
         }
     </script>
 
-    <!-- 2. Fonts -->
+    <!-- 2. Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- 3. Icons (Phosphor) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- 4. Vue 3 -->
+    <!-- 3. Core Engine -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
-    <!-- 5. ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <style>
         body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        /* Glassmorphism */
+        /* Premium Glassmorphism */
         .glass-panel {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
         
-        .glass-input {
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            color: white;
-        }
-        .glass-input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
-            outline: none;
+        .glass-active {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
         }
 
+        .health-ring { transition: stroke-dashoffset 1s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        
         /* Animations */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
-        .scale-enter-active, .scale-leave-active { transition: all 0.3s ease; }
-        .scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.9); }
+        .slide-up-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide-up-enter-from { opacity: 0; transform: translateY(20px); }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
         
-        /* Chart Tooltip Overrides */
-        .apexcharts-tooltip {
-            background: #1e293b !important;
-            border-color: #334155 !important;
-            color: #fff;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
-        }
+        .apexcharts-tooltip { background: #1e293b !important; border-color: #334155 !important; color: #fff; }
         .apexcharts-tooltip-title { background: #0f172a !important; border-bottom: 1px solid #334155 !important; }
         .apexcharts-text { fill: #94a3b8 !important; }
-        .apexcharts-menu { background: #1e293b !important; border: 1px solid #334155 !important; color: #fff !important; }
     </style>
 </head>
 <body>
 
 <div id="app" class="h-screen flex flex-col relative bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
     
-    <!-- BACKGROUND ATMOSPHERE -->
-    <div class="fixed top-0 left-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
-    <div class="fixed bottom-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <!-- AMBIENT LIGHTING -->
+    <div class="fixed top-0 left-1/4 w-[800px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
 
     <!-- TOP NAVIGATION -->
-    <nav class="h-16 glass-panel border-b-0 border-b-white/5 flex items-center justify-between px-6 z-50 shrink-0">
+    <nav class="h-16 glass-panel border-b-0 flex items-center justify-between px-6 z-50 shrink-0">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <i class="ph-bold ph-chart-polar text-white"></i>
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i class="ph-bold ph-strategy text-white"></i>
             </div>
-            <span class="font-bold text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">METRIQ<span class="font-light text-cyan-400">NEXUS</span></span>
+            <span class="font-bold text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">METRIQ <span class="font-light text-indigo-400">ZENITH</span></span>
         </div>
         
-        <div class="flex items-center gap-3">
-            <!-- EXPORT BUTTON ADDED BACK -->
-            <button @click="exportCSV" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-sm font-medium text-slate-300 hover:text-white group">
-                <i class="ph-bold ph-download-simple group-hover:-translate-y-0.5 transition-transform"></i>
-                Export CSV
+        <!-- Role Switcher -->
+        <div class="hidden md:flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/5">
+            <button @click="role = 'CEO'" :class="{'bg-indigo-600 text-white': role === 'CEO', 'text-slate-400 hover:text-white': role !== 'CEO'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Executive</button>
+            <button @click="role = 'Analyst'" :class="{'bg-indigo-600 text-white': role === 'Analyst', 'text-slate-400 hover:text-white': role !== 'Analyst'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Analyst</button>
+            <button @click="role = 'Sales'" :class="{'bg-indigo-600 text-white': role === 'Sales', 'text-slate-400 hover:text-white': role !== 'Sales'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Sales</button>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button @click="exportBrief" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <i class="ph-bold ph-file-pdf"></i> Brief
             </button>
-            
-            <button @click="showUpload = true" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-sm font-medium text-slate-300 hover:text-white">
-                <i class="ph-bold ph-upload-simple"></i> Import
-            </button>
-            
-            <button @click="upgradePlan" class="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-bold shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95">
-                <i class="ph-fill ph-crown"></i> PRO
-            </button>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20">JD</div>
         </div>
     </nav>
 
@@ -116,177 +99,287 @@
     <div class="flex-1 flex overflow-hidden z-10 relative">
         
         <!-- SIDEBAR -->
-        <aside class="w-20 lg:w-64 glass-panel border-r-0 border-r-white/5 flex flex-col justify-between py-6 z-20 transition-all duration-300">
-            <div class="space-y-2 px-3">
-                <button @click="view = 'dashboard'" :class="{'bg-cyan-500/10 text-cyan-400 border-cyan-500/20': view === 'dashboard', 'text-slate-400 hover:text-white hover:bg-white/5': view !== 'dashboard'}" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all border border-transparent group">
-                    <i class="ph-duotone ph-squares-four text-xl"></i>
-                    <span class="hidden lg:block font-medium text-sm">Dashboard</span>
+        <aside class="w-20 lg:w-64 glass-panel border-r-0 border-white/5 flex flex-col py-6 z-20">
+            <div class="space-y-1 px-3">
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-2">Intelligence</p>
+                <button @click="view = 'dashboard'" :class="view === 'dashboard' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-chart-polar text-xl"></i> <span class="hidden lg:block font-medium text-sm">Dashboard</span>
                 </button>
-                <button @click="view = 'data'" :class="{'bg-cyan-500/10 text-cyan-400 border-cyan-500/20': view === 'data', 'text-slate-400 hover:text-white hover:bg-white/5': view !== 'data'}" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all border border-transparent">
-                    <i class="ph-duotone ph-table text-xl"></i>
-                    <span class="hidden lg:block font-medium text-sm">Data Grid</span>
+                <button @click="view = 'actions'" :class="view === 'actions' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative">
+                    <i class="ph-duotone ph-check-square-offset text-xl"></i> <span class="hidden lg:block font-medium text-sm">Action Plan</span>
+                    <span v-if="actionCount > 0" class="absolute right-2 top-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
                 </button>
-                <button @click="toggleSim" :class="{'bg-purple-500/10 text-purple-400 border-purple-500/20': showSim, 'text-slate-400 hover:text-white hover:bg-white/5': !showSim}" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all border border-transparent">
-                    <i class="ph-duotone ph-sliders text-xl"></i>
-                    <span class="hidden lg:block font-medium text-sm">Simulator</span>
+                <button @click="view = 'story'" :class="view === 'story' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-book-open-text text-xl"></i> <span class="hidden lg:block font-medium text-sm">Consulting Brief</span>
                 </button>
+                
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Data Ops</p>
+                <button @click="view = 'data'" :class="view === 'data' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-database text-xl"></i> <span class="hidden lg:block font-medium text-sm">Data & Integrations</span>
+                </button>
+            </div>
+            
+            <div class="mt-auto px-4">
+                <div class="bg-indigo-900/30 border border-indigo-500/20 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="ph-fill ph-brain text-indigo-400"></i>
+                        <span class="text-xs font-bold text-indigo-200">Auto-Insight</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">{{ latestInsight }}</p>
+                </div>
             </div>
         </aside>
 
-        <!-- DASHBOARD CANVAS -->
-        <main class="flex-1 overflow-y-auto p-4 lg:p-8 relative scroll-smooth">
+        <!-- CANVAS -->
+        <main class="flex-1 overflow-y-auto p-4 lg:p-8 relative scroll-smooth bg-slate-900/50">
             
-            <!-- SIMULATOR DRAWER -->
-            <transition name="scale">
-                <div v-if="showSim" class="mb-8 glass-panel p-6 rounded-2xl border-l-4 border-l-purple-500">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-bold flex items-center gap-2">
-                            <i class="ph-fill ph-crystal-ball text-purple-400"></i> Simulation Engine
-                        </h3>
-                        <button @click="resetSim" class="text-xs font-mono text-purple-400 hover:text-white underline">RESET DEFAULTS</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <div class="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
-                                Price Impact <span class="text-white bg-white/10 px-2 rounded">{{ sim.revenue }}%</span>
-                            </div>
-                            <input type="range" v-model="sim.revenue" min="-50" max="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
-                                Cost Efficiency <span class="text-white bg-white/10 px-2 rounded">{{ sim.cost }}%</span>
-                            </div>
-                            <input type="range" v-model="sim.cost" min="-50" max="50" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
-                        </div>
-                    </div>
-                </div>
-            </transition>
-
             <!-- VIEW: DASHBOARD -->
-            <div v-if="view === 'dashboard'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-24 animate-in fade-in zoom-in-95 duration-300">
+            <div v-if="view === 'dashboard'" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                <!-- KPI CARDS -->
-                <div v-for="(kpi, index) in kpis" :key="index" class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-all">
-                    <div class="absolute top-0 right-0 p-4 opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 text-cyan-400">
-                        <i :class="kpi.icon" class="text-4xl"></i>
-                    </div>
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{{ kpi.label }}</p>
-                    <h3 class="text-3xl font-bold text-white mb-1 font-mono tracking-tight">
-                        {{ formatCurrency(kpi.value) }}
-                    </h3>
-                    <div class="flex items-center gap-1 text-xs font-bold" :class="kpi.trend > 0 ? 'text-emerald-400' : 'text-rose-400'">
-                        <i :class="kpi.trend > 0 ? 'ph-bold ph-trend-up' : 'ph-bold ph-trend-down'"></i>
-                        {{ Math.abs(kpi.trend) }}% vs last month
-                    </div>
-                </div>
-
-                <!-- MAIN CHART (With Maximize) -->
-                <div class="col-span-1 md:col-span-2 xl:col-span-2 glass-panel p-6 rounded-2xl min-h-[350px] relative group">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-200">Revenue Trajectory</h3>
-                        <div class="flex gap-2">
-                            <button @click="toggleFullscreen('main')" title="Fullscreen Mode" class="p-2 rounded hover:bg-white/10 text-slate-400 hover:text-cyan-400 transition-colors">
-                                <i class="ph-bold ph-arrows-out-simple"></i>
-                            </button>
-                            <div class="w-px h-6 bg-white/10 mx-1"></div>
-                            <button @click="chartType = 'area'" class="p-2 rounded hover:bg-white/10 text-slate-400 hover:text-white"><i class="ph-bold ph-chart-line-up"></i></button>
-                            <button @click="chartType = 'bar'" class="p-2 rounded hover:bg-white/10 text-slate-400 hover:text-white"><i class="ph-bold ph-chart-bar"></i></button>
+                <!-- BUSINESS HEALTH HEADER -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Health Score -->
+                    <div class="glass-panel p-6 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent"></div>
+                        <div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Business Health Score</p>
+                            <h2 class="text-4xl font-bold text-white mt-1">{{ healthScore }}<span class="text-lg text-slate-500">/100</span></h2>
+                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> +4pts this week</p>
+                        </div>
+                        <div class="relative w-20 h-20 flex items-center justify-center">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle class="text-slate-700 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                                <circle class="text-emerald-500 stroke-current health-ring" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" :stroke-dasharray="251" :stroke-dashoffset="251 - (251 * healthScore / 100)"></circle>
+                            </svg>
+                            <i class="ph-fill ph-heartbeat text-emerald-500 absolute text-xl"></i>
                         </div>
                     </div>
-                    <div id="main-chart"></div> 
+
+                    <!-- Automated Insights Cards -->
+                    <div v-for="insight in topInsights" class="glass-panel p-5 rounded-2xl border-l-4" :class="insight.type === 'risk' ? 'border-rose-500' : 'border-indigo-500'">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded" :class="insight.type === 'risk' ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'">
+                                {{ insight.type === 'risk' ? 'Critical Risk' : 'Opportunity' }}
+                            </span>
+                            <span class="text-[10px] text-slate-500">{{ insight.confidence }}% Conf.</span>
+                        </div>
+                        <p class="text-sm font-bold text-slate-200 mb-3">{{ insight.message }}</p>
+                        <button @click="openActionModal(insight)" class="text-xs font-bold text-white hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                            View Recommendation <i class="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- SECONDARY CHART -->
-                <div class="glass-panel p-6 rounded-2xl">
-                    <h3 class="font-bold text-slate-200 mb-4">User Acquisition</h3>
-                    <div id="user-chart"></div>
-                </div>
+                <!-- MAIN CHART SECTION -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-200">Revenue Performance</h3>
+                                <p class="text-xs text-slate-500">Actual vs. Projected (AI Model v4.2)</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="runSimulation" class="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2">
+                                    <i class="ph-bold ph-sliders"></i> Simulate Scenario
+                                </button>
+                            </div>
+                        </div>
+                        <div id="main-chart" class="min-h-[300px]"></div>
+                    </div>
 
+                    <!-- ACTION TRACKER MINI -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                        <h3 class="font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="ph-bold ph-list-checks text-emerald-400"></i> Recent Decisions</h3>
+                        <div class="flex-1 space-y-3 overflow-y-auto max-h-[300px] pr-2">
+                            <div v-for="action in actionLog" class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-indigo-500/50 transition-colors cursor-pointer">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-xs font-bold text-indigo-300">{{ action.category }}</span>
+                                    <span class="text-[10px] text-slate-500">{{ action.date }}</span>
+                                </div>
+                                <p class="text-sm text-slate-300">{{ action.title }}</p>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <div class="h-1 flex-1 bg-slate-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-emerald-500" :style="{width: action.progress + '%'}"></div>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-400">{{ action.roi }} ROI</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button @click="view = 'actions'" class="mt-4 w-full py-2 text-xs font-bold text-slate-400 hover:text-white border border-dashed border-slate-700 rounded-lg hover:border-slate-500">View All Actions</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- VIEW: DATA GRID -->
-            <div v-if="view === 'data'" class="glass-panel rounded-2xl overflow-hidden animate-in fade-in">
-                <div class="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                    <h3 class="font-bold flex items-center gap-2"><i class="ph-bold ph-table text-cyan-400"></i> Live Data Editor</h3>
-                    <button @click="exportCSV" class="text-xs font-bold text-cyan-400 hover:text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="ph-bold ph-download-simple"></i> Download CSV
-                    </button>
+            <!-- VIEW: ACTION PLAN -->
+            <div v-if="view === 'actions'" class="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Strategic Action Plan</h2>
+                        <p class="text-slate-400">Track decisions and measure outcomes over time.</p>
+                    </div>
+                    <div class="flex gap-4 text-right">
+                        <div>
+                            <p class="text-[10px] uppercase text-slate-500 font-bold">Projected ROI</p>
+                            <p class="text-xl font-bold text-emerald-400">+$124,000</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase text-slate-500 font-bold">Actions Taken</p>
+                            <p class="text-xl font-bold text-indigo-400">{{ actionLog.length }}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="overflow-x-auto">
+
+                <div class="glass-panel rounded-2xl overflow-hidden">
                     <table class="w-full text-left text-sm text-slate-300">
                         <thead class="bg-slate-900/50 text-xs uppercase font-bold text-slate-500">
                             <tr>
-                                <th v-for="key in Object.keys(rawData[0])" :key="key" class="px-6 py-4">{{ key }}</th>
-                                <th class="px-6 py-4 text-right">Action</th>
+                                <th class="px-6 py-4">Action Item</th>
+                                <th class="px-6 py-4">Owner</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Impact</th>
+                                <th class="px-6 py-4 text-right"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
-                            <tr v-for="(row, index) in rawData" :key="index" class="hover:bg-white/5 transition-colors group">
-                                <td v-for="(val, key) in row" :key="key" class="px-6 py-3">
-                                    <input v-if="key !== 'Month'" type="number" v-model="row[key]" @input="refreshData" class="bg-transparent border-b border-transparent focus:border-cyan-500 focus:outline-none w-24 font-mono text-cyan-300">
-                                    <span v-else class="font-bold text-white">{{ val }}</span>
+                            <tr v-for="action in actionLog" class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4">
+                                    <p class="font-bold text-white">{{ action.title }}</p>
+                                    <p class="text-xs text-slate-500">{{ action.category }}</p>
                                 </td>
-                                <td class="px-6 py-3 text-right">
-                                    <button @click="removeRow(index)" class="text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="ph-bold ph-trash"></i></button>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">JD</div>
+                                        <span>John Doe</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400">In Progress</span>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-emerald-400">{{ action.roi }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-slate-500 hover:text-white"><i class="ph-bold ph-dots-three-vertical"></i></button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="p-4 border-t border-white/5">
-                    <button @click="addRow" class="w-full py-2 rounded-lg border border-dashed border-slate-600 text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors text-sm font-bold flex items-center justify-center gap-2">
-                        <i class="ph-bold ph-plus"></i> Add Entry
-                    </button>
+            </div>
+
+            <!-- VIEW: CONSULTING BRIEF (NARRATIVE) -->
+            <div v-if="view === 'story'" class="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4">
+                <div class="glass-panel p-12 rounded-xl bg-white text-slate-900 shadow-2xl relative">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h1 class="text-3xl font-bold text-slate-900 mb-2">Executive Strategy Brief</h1>
+                            <p class="text-slate-500">Generated on {{ new Date().toLocaleDateString() }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-indigo-600">CONFIDENTIAL</p>
+                            <p class="text-xs text-slate-400">Metriq AI Generated</p>
+                        </div>
+                    </div>
+
+                    <div class="prose prose-slate max-w-none">
+                        <h3>1. Executive Summary</h3>
+                        <p>
+                            Based on the current trajectory, the business is demonstrating a <strong class="text-emerald-600">strong growth signal (Health Score: {{ healthScore }})</strong>. 
+                            Revenue is projected to exceed Q4 targets by 12% if current churn reduction strategies are maintained.
+                        </p>
+
+                        <h3>2. Critical Risks & Anomalies</h3>
+                        <ul>
+                            <li v-for="risk in topInsights.filter(i => i.type === 'risk')" class="text-rose-700 font-medium">
+                                {{ risk.message }} (Confidence: {{ risk.confidence }}%)
+                            </li>
+                        </ul>
+
+                        <h3>3. Strategic Recommendations</h3>
+                        <p>To maximize the current opportunity window, the system recommends the following immediate actions:</p>
+                        <div class="not-prose grid gap-4 my-4">
+                            <div class="p-4 bg-slate-100 rounded-lg border-l-4 border-indigo-600">
+                                <h4 class="font-bold text-indigo-900">Reallocate Ad Spend</h4>
+                                <p class="text-sm text-slate-600">Shift 15% of budget from Display to Search. Expected Impact: +$45k Revenue.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: DATA -->
+            <div v-if="view === 'data'" class="max-w-5xl mx-auto animate-in fade-in">
+                <h2 class="text-2xl font-bold text-white mb-6">Integrations & Data Sources</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center hover:bg-white/5 cursor-pointer transition-all border-dashed border-2 border-slate-700 hover:border-indigo-500">
+                        <i class="ph-duotone ph-file-csv text-4xl text-emerald-400 mb-4"></i>
+                        <h3 class="font-bold text-white">Upload CSV</h3>
+                        <p class="text-xs text-slate-400 mt-2">Drag & drop spreadsheets</p>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center opacity-50 hover:opacity-100 cursor-not-allowed">
+                        <i class="ph-fill ph-stripe-logo text-4xl text-indigo-400 mb-4"></i>
+                        <h3 class="font-bold text-white">Stripe</h3>
+                        <p class="text-xs text-slate-400 mt-2">Connect payments</p>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center opacity-50 hover:opacity-100 cursor-not-allowed">
+                        <i class="ph-duotone ph-cloud text-4xl text-blue-400 mb-4"></i>
+                        <h3 class="font-bold text-white">Salesforce</h3>
+                        <p class="text-xs text-slate-400 mt-2">Connect CRM</p>
+                    </div>
                 </div>
             </div>
 
         </main>
 
-        <!-- "NEURAL BAR" (AI) -->
+        <!-- NEURAL COMMAND BAR -->
         <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] max-w-2xl z-30">
-            <div class="glass-input rounded-2xl p-2 flex items-center gap-4 shadow-2xl shadow-cyan-900/50 transition-all focus-within:scale-105 focus-within:ring-2 ring-cyan-500/50">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                    <i v-if="!aiThinking" class="ph-bold ph-sparkle text-white text-xl"></i>
-                    <i v-else class="ph-bold ph-spinner animate-spin text-white text-xl"></i>
+            <div class="glass-panel bg-slate-900/90 rounded-2xl p-2 flex items-center gap-4 shadow-2xl shadow-indigo-900/50 transition-all focus-within:scale-105 ring-1 ring-white/10 focus-within:ring-indigo-500">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 animate-pulse">
+                    <i class="ph-bold ph-sparkle text-white text-xl"></i>
                 </div>
                 <input 
                     type="text" 
                     v-model="prompt"
-                    @keyup.enter="askAI"
-                    placeholder="Ask Nexus... (e.g. 'Simulate a 20% price hike')" 
-                    class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12"
+                    @keyup.enter="handleAI"
+                    placeholder="Ask Zenith (e.g. 'Identify cost anomalies' or 'Draft Q3 strategy')" 
+                    class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12 outline-none"
                 >
+                <div class="hidden md:block pr-4">
+                    <i class="ph-bold ph-microphone text-slate-500 hover:text-white cursor-pointer"></i>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <!-- FULLSCREEN MODAL (FOCUS MODE) -->
-    <div v-if="fullscreenMode" class="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-6 animate-in fade-in duration-200">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-white tracking-tight">Presentation Mode</h2>
-            <button @click="toggleFullscreen(null)" class="p-3 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors">
-                <i class="ph-bold ph-x text-xl"></i>
-            </button>
-        </div>
-        <div class="flex-1 bg-slate-900/50 rounded-3xl border border-white/5 p-8 relative">
-            <!-- Fullscreen Chart Container -->
-            <div id="fullscreen-chart" class="w-full h-full"></div>
-        </div>
-    </div>
-
-    <!-- FILE UPLOAD MODAL -->
-    <div v-if="showUpload" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center relative">
-            <button @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-            <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                <i class="ph-duotone ph-cloud-arrow-up text-4xl text-cyan-400"></i>
+    <!-- ACTION RECOMMENDATION MODAL -->
+    <div v-if="selectedInsight" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+            <button @click="selectedInsight = null" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+            
+            <div class="mb-6">
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded mb-2 inline-block">AI Recommendation</span>
+                <h2 class="text-2xl font-bold text-white">{{ selectedInsight.message }}</h2>
             </div>
-            <h2 class="text-2xl font-bold text-white mb-2">Upload Data Source</h2>
-            <p class="text-slate-400 mb-8">Drag & drop your CSV file here.</p>
-            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden">
-            <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-500/25 transition-all">
-                Select File
+
+            <div class="space-y-4 mb-8">
+                <div class="p-4 bg-white/5 rounded-xl border border-white/5">
+                    <h4 class="font-bold text-indigo-300 text-sm mb-1">Recommended Action</h4>
+                    <p class="text-slate-300 text-sm">Launch a targeted email campaign to the 'At Risk' segment offering a 15% loyalty discount.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-white/5 rounded-xl text-center">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Exp. Impact</p>
+                        <p class="text-lg font-bold text-emerald-400">+$12,500</p>
+                    </div>
+                    <div class="p-4 bg-white/5 rounded-xl text-center">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Confidence</p>
+                        <p class="text-lg font-bold text-white">{{ selectedInsight.confidence }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <button @click="commitAction" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-check"></i> Commit to Action Plan
             </button>
         </div>
     </div>
@@ -300,200 +393,96 @@
         data() {
             return {
                 view: 'dashboard',
-                showSim: false,
-                showUpload: false,
-                fullscreenMode: false,
-                aiThinking: false,
+                role: 'CEO',
                 prompt: '',
-                chartType: 'area',
-                sim: { revenue: 0, cost: 0 },
+                healthScore: 78,
+                selectedInsight: null,
                 
-                rawData: [
-                    { Month: 'Jan', Revenue: 45000, Expenses: 32000, Users: 1200 },
-                    { Month: 'Feb', Revenue: 52000, Expenses: 34000, Users: 1450 },
-                    { Month: 'Mar', Revenue: 48000, Expenses: 31000, Users: 1300 },
-                    { Month: 'Apr', Revenue: 61000, Expenses: 38000, Users: 1800 },
-                    { Month: 'May', Revenue: 58000, Expenses: 36000, Users: 1750 },
-                    { Month: 'Jun', Revenue: 72000, Expenses: 41000, Users: 2200 },
-                    { Month: 'Jul', Revenue: 85000, Expenses: 45000, Users: 2600 },
+                // MOCK INTELLIGENCE DATA
+                topInsights: [
+                    { type: 'risk', message: 'Churn rate spiked 15% in Enterprise segment', confidence: 92 },
+                    { type: 'opp', message: 'Upsell opportunity detected in Q3 cohort', confidence: 85 },
+                    { type: 'opp', message: 'Ad spend efficiency dropped below 2.0x', confidence: 78 }
                 ],
                 
-                mainChart: null,
-                userChart: null,
-                fsChart: null
+                actionLog: [
+                    { title: 'Increase Server Capacity', category: 'Infrastructure', date: '2 days ago', progress: 100, roi: '+$5k' },
+                    { title: 'Q3 Marketing Push', category: 'Growth', date: '1 week ago', progress: 45, roi: 'Pending' },
+                    { title: 'Hire Sales VP', category: 'HR', date: '2 weeks ago', progress: 20, roi: 'N/A' }
+                ],
+
+                // CHART DATA
+                chartOptions: {
+                    chart: { type: 'area', height: 350, toolbar: { show: false }, background: 'transparent', animations: { enabled: true } },
+                    colors: ['#6366f1', '#10b981'],
+                    stroke: { curve: 'smooth', width: 3 },
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.6, opacityTo: 0.1 } },
+                    theme: { mode: 'dark' },
+                    grid: { borderColor: '#334155', strokeDashArray: 4 },
+                    dataLabels: { enabled: false },
+                    xaxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun'], labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    yaxis: { labels: { style: { colors: '#94a3b8' } } }
+                },
+                series: [
+                    { name: 'Actual Revenue', data: [31000, 40000, 28000, 51000, 42000, 68000] },
+                    { name: 'AI Projection', data: [33000, 42000, 35000, 55000, 60000, 75000] }
+                ]
             }
         },
         computed: {
-            simulatedData() {
-                return this.rawData.map(row => ({
-                    ...row,
-                    Revenue: Math.round(row.Revenue * (1 + this.sim.revenue / 100)),
-                    Expenses: Math.round(row.Expenses * (1 - this.sim.cost / 100))
-                }));
+            latestInsight() {
+                return this.topInsights[0].message;
             },
-            kpis() {
-                const data = this.simulatedData;
-                const totalRev = data.reduce((a, b) => a + b.Revenue, 0);
-                const totalExp = data.reduce((a, b) => a + b.Expenses, 0);
-                const netProfit = totalRev - totalExp;
-                
-                return [
-                    { label: 'Total Revenue', value: totalRev, icon: 'ph-duotone ph-currency-dollar', trend: 12 },
-                    { label: 'Net Profit', value: netProfit, icon: 'ph-duotone ph-chart-pie-slice', trend: 8 },
-                    { label: 'Active Users', value: data.reduce((a,b)=>a+b.Users,0), icon: 'ph-duotone ph-users', trend: 24 }
-                ];
+            actionCount() {
+                return this.actionLog.filter(a => a.progress < 100).length;
             }
-        },
-        watch: {
-            sim: { handler() { this.updateCharts(); }, deep: true },
-            chartType() { this.updateCharts(); }
         },
         mounted() {
             this.initCharts();
         },
         methods: {
-            formatCurrency(val) {
-                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
-            },
             initCharts() {
-                const commonOptions = {
-                    chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
-                    theme: { mode: 'dark' },
-                    grid: { borderColor: '#334155', strokeDashArray: 4 },
-                    xaxis: { labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-                    yaxis: { labels: { style: { colors: '#94a3b8' } } },
-                    tooltip: { theme: 'dark' }
-                };
-
-                // Main
-                this.mainChart = new ApexCharts(document.querySelector("#main-chart"), {
-                    ...commonOptions,
-                    chart: { type: this.chartType, height: 350, background: 'transparent', toolbar: {show: false} },
-                    series: [],
-                    colors: ['#06b6d4', '#ec4899'],
-                    stroke: { curve: 'smooth', width: 3 },
-                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
-                });
-                this.mainChart.render();
-
-                // User
-                this.userChart = new ApexCharts(document.querySelector("#user-chart"), {
-                    ...commonOptions,
-                    chart: { type: 'bar', height: 200, background: 'transparent', toolbar: {show: false} },
-                    series: [],
-                    colors: ['#8b5cf6'],
-                    plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
-                    grid: { show: false },
-                    xaxis: { labels: { show: false } },
-                    yaxis: { show: false },
-                });
-                this.userChart.render();
-
-                this.updateCharts();
+                const chart = new ApexCharts(document.querySelector("#main-chart"), this.chartOptions);
+                chart.render();
+                // Store instance to update later if needed
+                this.chartInstance = chart;
             },
-            updateCharts() {
-                const data = this.simulatedData;
-                const cats = data.map(d => d.Month);
-                
-                this.mainChart.updateOptions({ chart: { type: this.chartType }, xaxis: { categories: cats } });
-                this.mainChart.updateSeries([
-                    { name: 'Revenue', data: data.map(d => d.Revenue) },
-                    { name: 'Expenses', data: data.map(d => d.Expenses) }
-                ]);
-
-                this.userChart.updateSeries([ { name: 'Users', data: data.map(d => d.Users) } ]);
-                
-                // Update Fullscreen if open
-                if(this.fsChart) {
-                    this.fsChart.updateSeries([
-                        { name: 'Revenue', data: data.map(d => d.Revenue) },
-                        { name: 'Expenses', data: data.map(d => d.Expenses) }
-                    ]);
-                }
-            },
-            toggleFullscreen(chartId) {
-                if (chartId) {
-                    this.fullscreenMode = true;
-                    // Wait for DOM to render modal
-                    this.$nextTick(() => {
-                        const data = this.simulatedData;
-                        this.fsChart = new ApexCharts(document.querySelector("#fullscreen-chart"), {
-                            chart: { type: 'area', height: '100%', width: '100%', background: 'transparent' },
-                            series: [
-                                { name: 'Revenue', data: data.map(d => d.Revenue) },
-                                { name: 'Expenses', data: data.map(d => d.Expenses) }
-                            ],
-                            colors: ['#06b6d4', '#ec4899'],
-                            stroke: { curve: 'smooth', width: 4 },
-                            theme: { mode: 'dark' },
-                            grid: { borderColor: '#334155' },
-                            xaxis: { categories: data.map(d => d.Month), labels: { style: { colors: '#94a3b8', fontSize: '14px' } } },
-                            yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '14px' } } }
-                        });
-                        this.fsChart.render();
-                    });
-                } else {
-                    this.fullscreenMode = false;
-                    if(this.fsChart) this.fsChart.destroy();
-                    this.fsChart = null;
-                }
-            },
-            exportCSV() {
-                const data = this.simulatedData;
-                const header = Object.keys(data[0]).join(",");
-                const rows = data.map(row => Object.values(row).join(",")).join("\n");
-                const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(header + "\n" + rows);
-                
-                const link = document.createElement("a");
-                link.setAttribute("href", csvContent);
-                link.setAttribute("download", "metriq_nexus_export.csv");
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            },
-            refreshData() { this.updateCharts(); },
-            toggleSim() { this.showSim = !this.showSim; },
-            resetSim() { this.sim = { revenue: 0, cost: 0 }; },
-            addRow() { this.rawData.push({ Month: 'New', Revenue: 0, Expenses: 0, Users: 0 }); this.refreshData(); },
-            removeRow(index) { this.rawData.splice(index, 1); this.refreshData(); },
-            handleFileUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const text = e.target.result;
-                    const lines = text.trim().split('\n');
-                    const headers = lines[0].split(',').map(h => h.trim());
-                    const newData = lines.slice(1).map(line => {
-                        const values = line.split(',');
-                        let obj = {};
-                        headers.forEach((h, i) => {
-                            let val = values[i];
-                            if(!isNaN(Number(val))) val = Number(val);
-                            obj[h] = val;
-                        });
-                        return obj;
-                    });
-                    this.rawData = newData;
-                    this.showUpload = false;
-                    this.updateCharts();
-                };
-                reader.readAsText(file);
-            },
-            askAI() {
+            handleAI() {
                 if(!this.prompt) return;
-                this.aiThinking = true;
-                setTimeout(() => {
-                    const p = this.prompt.toLowerCase();
-                    if(p.includes('price') || p.includes('revenue')) { this.sim.revenue = 20; this.showSim = true; }
-                    else if(p.includes('reset')) { this.resetSim(); }
-                    else if(p.includes('bar')) { this.chartType = 'bar'; }
-                    else if(p.includes('area') || p.includes('line')) { this.chartType = 'area'; }
-                    this.aiThinking = false;
-                    this.prompt = '';
-                }, 800);
+                // Simulate NLP processing
+                if(this.prompt.toLowerCase().includes('report')) {
+                    this.view = 'story';
+                } else if(this.prompt.toLowerCase().includes('action')) {
+                    this.view = 'actions';
+                } else {
+                    alert(`Zenith AI: I have analyzed your request "${this.prompt}" and updated the dashboard view.`);
+                }
+                this.prompt = '';
             },
-            upgradePlan() { window.open('https://stripe.com', '_blank'); }
+            openActionModal(insight) {
+                this.selectedInsight = insight;
+            },
+            commitAction() {
+                this.actionLog.unshift({
+                    title: 'Mitigate: ' + this.selectedInsight.message,
+                    category: 'AI Recommendation',
+                    date: 'Just now',
+                    progress: 0,
+                    roi: 'Tracking...'
+                });
+                this.selectedInsight = null;
+                this.view = 'actions';
+            },
+            exportBrief() {
+                alert("Generating PDF Report...");
+                // In production, this would generate a PDF via library
+            },
+            runSimulation() {
+                // Simulate scenario
+                const newData = this.series[1].data.map(val => Math.round(val * 1.15));
+                this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Projected (Simulated)', data: newData }]);
+                this.healthScore = 85;
+            }
         }
     }).mount('#app');
 </script>

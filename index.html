@@ -1,0 +1,117 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  TrendingUp, 
+  Activity, 
+  CheckCircle2, 
+  AlertCircle, 
+  ArrowRight, 
+  Sparkles,
+  UploadCloud,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  RefreshCw,
+  Zap,
+  ShieldCheck,
+  Code,
+  Lock,
+  Save,
+  Layout,
+  Crown,
+  LogOut,
+  ChevronRight,
+  Trash2,
+  BarChart3,
+  PieChart,
+  LineChart,
+  Command,
+  Sliders,
+  Share2,
+  Download
+} from 'lucide-react';
+import { initializeApp } from "firebase/app";
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged,
+  signInWithCustomToken
+} from "firebase/auth";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  deleteDoc, 
+  doc, 
+  setDoc,
+  serverTimestamp 
+} from "firebase/firestore";
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+// --- SVG CHARTING ENGINE (Zero-Dependency) ---
+const ChartWidget = ({ type, data, xKey, yKey, color = "#3b82f6", simulation }) => {
+  if (!data || data.length === 0) return <div className="h-full flex items-center justify-center text-slate-300">No Data</div>;
+
+  // Apply Simulation Multipliers
+  const processValue = (val) => {
+    let num = Number(val);
+    if (simulation) {
+      num = num * (1 + (simulation.revenueMod / 100)); // Revenue Impact
+      num = num * (1 - (simulation.costMod / 100));    // Cost Reduction Impact
+    }
+    return num;
+  };
+
+  const values = data.map(d => processValue(d[yKey]));
+  const max = Math.max(...values, 1) * 1.1;
+  const min = Math.min(...values, 0) * 0.9;
+  const h = 160;
+  const w = 400;
+
+  if (type === 'kpi') {
+    const total = values.reduce((a,b) => a+b, 0);
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <span className="text-4xl font-bold text-slate-800">{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-2">Total {yKey}</span>
+        {simulation && (simulation.revenueMod !== 0 || simulation.costMod !== 0) && (
+          <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full mt-2">
+            Simulated Impact
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Generate SVG Paths
+  const pointsStr = data.map((d, i) => {
+    const x = (i / (data.length - 1 || 1)) * w;
+    const y = h - ((processValue(d[yKey]) - min) / (max - min || 1)) * h;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <div className="w-full h-full relative group">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full overflow-visible">
+        {type === 'area' && (
+          <>
+            <defs>
+              <linearGradient id={`grad-${yKey}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.2"/>
+                <stop offset="100%" stopColor={color} stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+            <polygon points={`0,${h} ${pointsStr} ${w},${h}`} fill={`url(#grad-${yKey})`} />
+          </>
+        )}
+        
+        {(type === 'line' || type === 'area') && (
+           <polyline 
+             points={pointsStr}
+

@@ -590,7 +590,10 @@
         },
         mounted() {
             this.setIndustry('SaaS');
-            this.initCharts();
+            // Ensure DOM is rendered before initializing chart to prevent race conditions
+            this.$nextTick(() => {
+                this.initCharts();
+            });
         },
         methods: {
             setIndustry(type) {
@@ -636,11 +639,10 @@
                     this.series = [{ name: 'AUM (Millions)', data: [8.5, 8.7, 8.4, 9.1, 9.0, 9.5] }, { name: 'AI Forecast', data: [8.6, 8.8, 8.9, 9.2, 9.3, 9.8] }];
                 }
                 
-                if(this.chartInstance) {
-                    this.chartInstance.updateSeries(this.series);
-                }
+                this.updateChart();
             },
             initCharts() {
+                // Initialize with current state data
                 const options = {
                     ...this.chartOptions,
                     series: this.series
@@ -648,6 +650,12 @@
                 const chart = new ApexCharts(document.querySelector("#main-chart"), options);
                 chart.render();
                 this.chartInstance = chart;
+            },
+            updateChart() {
+                // Safely update chart only if instance exists
+                if(this.chartInstance) {
+                    this.chartInstance.updateSeries(this.series);
+                }
             },
             fillPrompt() {
                 // Cycle through complex prompts
@@ -671,7 +679,7 @@
                         { name: 'Revenue', data: [45, 52, 38, 24, 33, 60] },
                         { name: 'Efficiency Score', data: [88, 85, 92, 95, 94, 98] }
                     ];
-                    this.chartInstance.updateSeries(newSeries);
+                    if(this.chartInstance) this.chartInstance.updateSeries(newSeries);
                     this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
                     
                 } else if(p.includes('why')) {
@@ -723,7 +731,7 @@
             },
             runSimulation() {
                 const newData = this.series[1].data.map(val => Math.round(val * 1.15));
-                this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Simulated Scenario', data: newData }]);
+                if(this.chartInstance) this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Simulated Scenario', data: newData }]);
                 this.healthScore = 88;
                 this.auditLogs.unshift({ time: 'Just now', user: 'Current User', action: 'Simulation', logic: '+15% Efficiency Scenario' });
             },
@@ -739,20 +747,27 @@
                     // DELAY TO SHOW ANIMATION
                     setTimeout(() => {
                         const text = e.target.result;
-                        const lines = text.trim().split('\n');
+                        const lines = text.trim().split('\n').filter(line => line.trim() !== ''); // Remove empty lines
+                        if (lines.length < 2) {
+                            alert("Invalid CSV format.");
+                            this.isUploading = false;
+                            return;
+                        }
+
                         const headers = lines[0].split(',').map(h => h.trim());
                         
                         const newData = [];
                         const categories = [];
                         const dynamicSeries = []; 
                         
+                        // Initialize dynamic series based on headers (skipping first col)
                         for(let j=1; j<headers.length; j++) {
                             dynamicSeries.push({ name: headers[j], data: [] });
                         }
 
                         for(let i=1; i<lines.length; i++) {
                             const row = lines[i].split(',');
-                            if(row.length < 2) continue;
+                            if(row.length < headers.length) continue; // Skip incomplete rows
                             
                             const rowObj = {};
                             headers.forEach((h, idx) => {
@@ -761,20 +776,23 @@
                             newData.push(rowObj);
                             categories.push(row[0]);
                             
-                            for(let j=1; j<row.length; j++) {
+                            for(let j=1; j<headers.length; j++) {
+                                // Ensure we have a series for this column
                                 if(dynamicSeries[j-1]) {
                                     dynamicSeries[j-1].data.push(Number(row[j]) || 0);
                                 }
                             }
                         }
 
+                        // Update State
                         this.gridHeaders = headers;
                         this.gridData = newData;
+                        this.series = dynamicSeries;
                         
+                        // Update Chart
                         if (this.chartInstance) {
                             this.chartInstance.updateOptions({ xaxis: { categories: categories }});
                             this.chartInstance.updateSeries(dynamicSeries);
-                            this.series = dynamicSeries; 
                         }
 
                         console.log("File loaded. Grid populated.");
@@ -809,6 +827,8 @@
                 this.refreshChartsFromGrid();
             },
             refreshChartsFromGrid() {
+                if (this.gridData.length === 0) return;
+
                 const categories = this.gridData.map(r => r[this.gridHeaders[0]]);
                 const newSeries = [];
                 

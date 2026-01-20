@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metriq Zenith | Decision Intelligence</title>
+    <title>Metriq Zenith | Decision Intelligence Platform</title>
     
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,11 +34,11 @@
         
         /* Premium Glassmorphism */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
         }
         
         .glass-active {
@@ -49,12 +49,14 @@
 
         .health-ring { transition: stroke-dashoffset 1s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
         
+        /* Privacy Mode Blur */
+        .privacy-blur { filter: blur(6px); user-select: none; transition: filter 0.3s; }
+        .privacy-blur:hover { filter: blur(0px); }
+
         /* Animations */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
-        .slide-up-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .slide-up-enter-from { opacity: 0; transform: translateY(20px); }
-
+        
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
@@ -80,18 +82,21 @@
             <span class="font-bold text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">METRIQ <span class="font-light text-indigo-400">ZENITH</span></span>
         </div>
         
-        <!-- Role Switcher -->
+        <!-- INDUSTRY LOGIC MODULE SWITCHER -->
         <div class="hidden md:flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/5">
-            <button @click="role = 'CEO'" :class="{'bg-indigo-600 text-white': role === 'CEO', 'text-slate-400 hover:text-white': role !== 'CEO'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Executive</button>
-            <button @click="role = 'Analyst'" :class="{'bg-indigo-600 text-white': role === 'Analyst', 'text-slate-400 hover:text-white': role !== 'Analyst'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Analyst</button>
-            <button @click="role = 'Sales'" :class="{'bg-indigo-600 text-white': role === 'Sales', 'text-slate-400 hover:text-white': role !== 'Sales'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Sales</button>
+            <button @click="setIndustry('SaaS')" :class="{'bg-indigo-600 text-white': industry === 'SaaS', 'text-slate-400 hover:text-white': industry !== 'SaaS'}" class="px-3 py-1 rounded text-xs font-bold transition-all">SaaS Mode</button>
+            <button @click="setIndustry('Retail')" :class="{'bg-indigo-600 text-white': industry === 'Retail', 'text-slate-400 hover:text-white': industry !== 'Retail'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Retail Mode</button>
+            <button @click="setIndustry('Finance')" :class="{'bg-indigo-600 text-white': industry === 'Finance', 'text-slate-400 hover:text-white': industry !== 'Finance'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Finance Mode</button>
         </div>
 
         <div class="flex items-center gap-4">
+            <button @click="privacyMode = !privacyMode" class="text-slate-400 hover:text-white transition-colors" title="Toggle Privacy Mode">
+                <i :class="privacyMode ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'"></i>
+            </button>
             <button @click="exportBrief" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
                 <i class="ph-bold ph-file-pdf"></i> Brief
             </button>
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20">JD</div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20 shadow-inner">JD</div>
         </div>
     </nav>
 
@@ -103,27 +108,30 @@
             <div class="space-y-1 px-3">
                 <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-2">Intelligence</p>
                 <button @click="view = 'dashboard'" :class="view === 'dashboard' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
-                    <i class="ph-duotone ph-chart-polar text-xl"></i> <span class="hidden lg:block font-medium text-sm">Dashboard</span>
+                    <i class="ph-duotone ph-chart-polar text-xl"></i> <span class="hidden lg:block font-medium text-sm">Decision Board</span>
                 </button>
                 <button @click="view = 'actions'" :class="view === 'actions' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative">
                     <i class="ph-duotone ph-check-square-offset text-xl"></i> <span class="hidden lg:block font-medium text-sm">Action Plan</span>
                     <span v-if="actionCount > 0" class="absolute right-2 top-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
                 </button>
                 <button @click="view = 'story'" :class="view === 'story' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
-                    <i class="ph-duotone ph-book-open-text text-xl"></i> <span class="hidden lg:block font-medium text-sm">Consulting Brief</span>
+                    <i class="ph-duotone ph-book-open-text text-xl"></i> <span class="hidden lg:block font-medium text-sm">Narrative Brief</span>
                 </button>
                 
-                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Data Ops</p>
-                <button @click="view = 'data'" :class="view === 'data' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
-                    <i class="ph-duotone ph-database text-xl"></i> <span class="hidden lg:block font-medium text-sm">Data & Integrations</span>
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Capabilities</p>
+                <button @click="view = 'metrics'" :class="view === 'metrics' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-function text-xl"></i> <span class="hidden lg:block font-medium text-sm">Metric Builder</span>
+                </button>
+                <button @click="view = 'audit'" :class="view === 'audit' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-shield-check text-xl"></i> <span class="hidden lg:block font-medium text-sm">Trust & Audit</span>
                 </button>
             </div>
             
             <div class="mt-auto px-4">
-                <div class="bg-indigo-900/30 border border-indigo-500/20 rounded-xl p-4">
+                <div class="bg-indigo-900/30 border border-indigo-500/20 rounded-xl p-4 animate-pulse">
                     <div class="flex items-center gap-2 mb-2">
                         <i class="ph-fill ph-brain text-indigo-400"></i>
-                        <span class="text-xs font-bold text-indigo-200">Auto-Insight</span>
+                        <span class="text-xs font-bold text-indigo-200">Always-On Watch</span>
                     </div>
                     <p class="text-[10px] text-slate-400 leading-relaxed">{{ latestInsight }}</p>
                 </div>
@@ -133,18 +141,18 @@
         <!-- CANVAS -->
         <main class="flex-1 overflow-y-auto p-4 lg:p-8 relative scroll-smooth bg-slate-900/50">
             
-            <!-- VIEW: DASHBOARD -->
+            <!-- DASHBOARD VIEW -->
             <div v-if="view === 'dashboard'" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                <!-- BUSINESS HEALTH HEADER -->
+                <!-- BUSINESS HEALTH ENGINE -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <!-- Health Score -->
-                    <div class="glass-panel p-6 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                    <!-- Composite Score -->
+                    <div class="glass-panel p-6 rounded-2xl flex items-center justify-between relative overflow-hidden group">
                         <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent"></div>
                         <div>
-                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Business Health Score</p>
-                            <h2 class="text-4xl font-bold text-white mt-1">{{ healthScore }}<span class="text-lg text-slate-500">/100</span></h2>
-                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> +4pts this week</p>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Health Index</p>
+                            <h2 class="text-4xl font-bold text-white mt-1" :class="{'privacy-blur': privacyMode}">{{ healthScore }}</h2>
+                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> Stable Growth</p>
                         </div>
                         <div class="relative w-20 h-20 flex items-center justify-center">
                             <svg class="w-full h-full" viewBox="0 0 100 100">
@@ -155,28 +163,28 @@
                         </div>
                     </div>
 
-                    <!-- Automated Insights Cards -->
-                    <div v-for="insight in topInsights" class="glass-panel p-5 rounded-2xl border-l-4" :class="insight.type === 'risk' ? 'border-rose-500' : 'border-indigo-500'">
+                    <!-- Automated Insight Cards (The "Decision Layer") -->
+                    <div v-for="insight in topInsights" class="glass-panel p-5 rounded-2xl border-l-4 relative group hover:bg-white/5 transition-all" :class="insight.type === 'risk' ? 'border-rose-500' : 'border-indigo-500'">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded" :class="insight.type === 'risk' ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'">
-                                {{ insight.type === 'risk' ? 'Critical Risk' : 'Opportunity' }}
+                                {{ insight.type === 'risk' ? 'Anomaly Detected' : 'Opportunity' }}
                             </span>
                             <span class="text-[10px] text-slate-500">{{ insight.confidence }}% Conf.</span>
                         </div>
                         <p class="text-sm font-bold text-slate-200 mb-3">{{ insight.message }}</p>
                         <button @click="openActionModal(insight)" class="text-xs font-bold text-white hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                            View Recommendation <i class="ph-bold ph-arrow-right"></i>
+                            Analyze & Act <i class="ph-bold ph-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- MAIN CHART SECTION -->
+                <!-- MAIN CHART SECTION with Predictive Layer -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
                         <div class="flex justify-between items-center mb-4">
                             <div>
-                                <h3 class="font-bold text-slate-200">Revenue Performance</h3>
-                                <p class="text-xs text-slate-500">Actual vs. Projected (AI Model v4.2)</p>
+                                <h3 class="font-bold text-slate-200">{{ industryLabels.metricName }} Performance</h3>
+                                <p class="text-xs text-slate-500">Historical vs. AI Forecast (Confidence: High)</p>
                             </div>
                             <div class="flex gap-2">
                                 <button @click="runSimulation" class="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2">
@@ -184,16 +192,16 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="main-chart" class="min-h-[300px]"></div>
+                        <div id="main-chart" class="min-h-[300px]" :class="{'privacy-blur': privacyMode}"></div>
                     </div>
 
-                    <!-- ACTION TRACKER MINI -->
+                    <!-- ACCOUNTABILITY TRACKER -->
                     <div class="glass-panel p-6 rounded-2xl flex flex-col">
-                        <h3 class="font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="ph-bold ph-list-checks text-emerald-400"></i> Recent Decisions</h3>
+                        <h3 class="font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="ph-bold ph-users text-indigo-400"></i> Accountability</h3>
                         <div class="flex-1 space-y-3 overflow-y-auto max-h-[300px] pr-2">
-                            <div v-for="action in actionLog" class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-indigo-500/50 transition-colors cursor-pointer">
+                            <div v-for="action in actionLog" class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-indigo-500/50 transition-colors cursor-pointer group">
                                 <div class="flex justify-between mb-1">
-                                    <span class="text-xs font-bold text-indigo-300">{{ action.category }}</span>
+                                    <span class="text-xs font-bold text-indigo-300">{{ action.owner }}</span>
                                     <span class="text-[10px] text-slate-500">{{ action.date }}</span>
                                 </div>
                                 <p class="text-sm text-slate-300">{{ action.title }}</p>
@@ -205,69 +213,60 @@
                                 </div>
                             </div>
                         </div>
-                        <button @click="view = 'actions'" class="mt-4 w-full py-2 text-xs font-bold text-slate-400 hover:text-white border border-dashed border-slate-700 rounded-lg hover:border-slate-500">View All Actions</button>
+                        <div class="mt-4 pt-4 border-t border-white/5 text-center">
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Decision Impact</p>
+                            <p class="text-xl font-bold text-emerald-400">+$124,500</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- VIEW: ACTION PLAN -->
-            <div v-if="view === 'actions'" class="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                <div class="flex justify-between items-end">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Strategic Action Plan</h2>
-                        <p class="text-slate-400">Track decisions and measure outcomes over time.</p>
+            <!-- VIEW: NO-CODE METRIC BUILDER -->
+            <div v-if="view === 'metrics'" class="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4">
+                <h2 class="text-2xl font-bold text-white mb-6">No-Code Metric Engine</h2>
+                <div class="glass-panel p-8 rounded-2xl">
+                    <div class="flex gap-4 items-center mb-6">
+                        <div class="bg-indigo-600/20 p-2 rounded text-indigo-400 font-mono text-sm">[ Revenue ]</div>
+                        <i class="ph-bold ph-divide text-slate-500"></i>
+                        <div class="bg-purple-600/20 p-2 rounded text-purple-400 font-mono text-sm">[ Employee Count ]</div>
+                        <i class="ph-bold ph-equals text-slate-500"></i>
+                        <div class="border-b border-indigo-500 text-white font-bold px-2 py-1">Rev Per Head</div>
                     </div>
-                    <div class="flex gap-4 text-right">
-                        <div>
-                            <p class="text-[10px] uppercase text-slate-500 font-bold">Projected ROI</p>
-                            <p class="text-xl font-bold text-emerald-400">+$124,000</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] uppercase text-slate-500 font-bold">Actions Taken</p>
-                            <p class="text-xl font-bold text-indigo-400">{{ actionLog.length }}</p>
-                        </div>
-                    </div>
+                    <p class="text-slate-400 text-sm mb-6">Define custom logic using plain English or drag-and-drop variables. The system will back-test this metric against historical data.</p>
+                    <button class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center gap-2">
+                        <i class="ph-bold ph-plus"></i> Create Metric
+                    </button>
                 </div>
+            </div>
 
+            <!-- VIEW: TRUST & AUDIT -->
+            <div v-if="view === 'audit'" class="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4">
+                <h2 class="text-2xl font-bold text-white mb-6">Security & Explainability Audit</h2>
                 <div class="glass-panel rounded-2xl overflow-hidden">
                     <table class="w-full text-left text-sm text-slate-300">
                         <thead class="bg-slate-900/50 text-xs uppercase font-bold text-slate-500">
                             <tr>
-                                <th class="px-6 py-4">Action Item</th>
-                                <th class="px-6 py-4">Owner</th>
-                                <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4">Impact</th>
-                                <th class="px-6 py-4 text-right"></th>
+                                <th class="px-6 py-4">Timestamp</th>
+                                <th class="px-6 py-4">User</th>
+                                <th class="px-6 py-4">Action</th>
+                                <th class="px-6 py-4">System Logic</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
-                            <tr v-for="action in actionLog" class="hover:bg-white/5 transition-colors">
-                                <td class="px-6 py-4">
-                                    <p class="font-bold text-white">{{ action.title }}</p>
-                                    <p class="text-xs text-slate-500">{{ action.category }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">JD</div>
-                                        <span>John Doe</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400">In Progress</span>
-                                </td>
-                                <td class="px-6 py-4 font-mono text-emerald-400">{{ action.roi }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    <button class="text-slate-500 hover:text-white"><i class="ph-bold ph-dots-three-vertical"></i></button>
-                                </td>
+                            <tr v-for="log in auditLogs" class="hover:bg-white/5">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ log.time }}</td>
+                                <td class="px-6 py-4">{{ log.user }}</td>
+                                <td class="px-6 py-4">{{ log.action }}</td>
+                                <td class="px-6 py-4 text-xs text-indigo-300">{{ log.logic }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- VIEW: CONSULTING BRIEF (NARRATIVE) -->
+            <!-- VIEW: NARRATIVE (Story) -->
             <div v-if="view === 'story'" class="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4">
-                <div class="glass-panel p-12 rounded-xl bg-white text-slate-900 shadow-2xl relative">
+                <div class="glass-panel p-12 rounded-xl bg-slate-100 text-slate-900 shadow-2xl relative">
                     <div class="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
                     <div class="flex justify-between items-start mb-8">
                         <div>
@@ -276,7 +275,7 @@
                         </div>
                         <div class="text-right">
                             <p class="font-bold text-indigo-600">CONFIDENTIAL</p>
-                            <p class="text-xs text-slate-400">Metriq AI Generated</p>
+                            <p class="text-xs text-slate-400">Metriq Zenith AI</p>
                         </div>
                     </div>
 
@@ -284,7 +283,7 @@
                         <h3>1. Executive Summary</h3>
                         <p>
                             Based on the current trajectory, the business is demonstrating a <strong class="text-emerald-600">strong growth signal (Health Score: {{ healthScore }})</strong>. 
-                            Revenue is projected to exceed Q4 targets by 12% if current churn reduction strategies are maintained.
+                            {{ industryLabels.metricName }} is projected to exceed Q4 targets by 12% if current churn reduction strategies are maintained.
                         </p>
 
                         <h3>2. Critical Risks & Anomalies</h3>
@@ -295,42 +294,21 @@
                         </ul>
 
                         <h3>3. Strategic Recommendations</h3>
-                        <p>To maximize the current opportunity window, the system recommends the following immediate actions:</p>
+                        <p>To maximize the current opportunity window, the Decision Engine recommends:</p>
                         <div class="not-prose grid gap-4 my-4">
-                            <div class="p-4 bg-slate-100 rounded-lg border-l-4 border-indigo-600">
-                                <h4 class="font-bold text-indigo-900">Reallocate Ad Spend</h4>
-                                <p class="text-sm text-slate-600">Shift 15% of budget from Display to Search. Expected Impact: +$45k Revenue.</p>
+                            <div class="p-4 bg-white border border-slate-200 shadow-sm rounded-lg border-l-4 border-indigo-600">
+                                <h4 class="font-bold text-indigo-900">Action: Reallocate Ad Spend</h4>
+                                <p class="text-sm text-slate-600">Root Cause: Efficiency drop in Display channel.</p>
+                                <p class="text-sm text-slate-600 font-bold mt-1">Expected Impact: +$45k Revenue.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- VIEW: DATA -->
-            <div v-if="view === 'data'" class="max-w-5xl mx-auto animate-in fade-in">
-                <h2 class="text-2xl font-bold text-white mb-6">Integrations & Data Sources</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center hover:bg-white/5 cursor-pointer transition-all border-dashed border-2 border-slate-700 hover:border-indigo-500">
-                        <i class="ph-duotone ph-file-csv text-4xl text-emerald-400 mb-4"></i>
-                        <h3 class="font-bold text-white">Upload CSV</h3>
-                        <p class="text-xs text-slate-400 mt-2">Drag & drop spreadsheets</p>
-                    </div>
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center opacity-50 hover:opacity-100 cursor-not-allowed">
-                        <i class="ph-fill ph-stripe-logo text-4xl text-indigo-400 mb-4"></i>
-                        <h3 class="font-bold text-white">Stripe</h3>
-                        <p class="text-xs text-slate-400 mt-2">Connect payments</p>
-                    </div>
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center text-center opacity-50 hover:opacity-100 cursor-not-allowed">
-                        <i class="ph-duotone ph-cloud text-4xl text-blue-400 mb-4"></i>
-                        <h3 class="font-bold text-white">Salesforce</h3>
-                        <p class="text-xs text-slate-400 mt-2">Connect CRM</p>
-                    </div>
-                </div>
-            </div>
-
         </main>
 
-        <!-- NEURAL COMMAND BAR -->
+        <!-- NEURAL COMMAND BAR (NLP ENGINE) -->
         <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] max-w-2xl z-30">
             <div class="glass-panel bg-slate-900/90 rounded-2xl p-2 flex items-center gap-4 shadow-2xl shadow-indigo-900/50 transition-all focus-within:scale-105 ring-1 ring-white/10 focus-within:ring-indigo-500">
                 <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 animate-pulse">
@@ -340,7 +318,7 @@
                     type="text" 
                     v-model="prompt"
                     @keyup.enter="handleAI"
-                    placeholder="Ask Zenith (e.g. 'Identify cost anomalies' or 'Draft Q3 strategy')" 
+                    placeholder="Ask Zenith... (e.g. 'Why did churn spike?' or 'Simulate 10% growth')" 
                     class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12 outline-none"
                 >
                 <div class="hidden md:block pr-4">
@@ -351,35 +329,57 @@
 
     </div>
 
-    <!-- ACTION RECOMMENDATION MODAL -->
-    <div v-if="selectedInsight" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+    <!-- DECISION INTELLIGENCE MODAL (Root Cause & Action) -->
+    <div v-if="selectedInsight" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
+        <div class="glass-panel p-8 rounded-3xl max-w-xl w-full relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
             <button @click="selectedInsight = null" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
             
             <div class="mb-6">
-                <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded mb-2 inline-block">AI Recommendation</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded mb-2 inline-block">Decision Intelligence</span>
                 <h2 class="text-2xl font-bold text-white">{{ selectedInsight.message }}</h2>
             </div>
 
-            <div class="space-y-4 mb-8">
-                <div class="p-4 bg-white/5 rounded-xl border border-white/5">
-                    <h4 class="font-bold text-indigo-300 text-sm mb-1">Recommended Action</h4>
-                    <p class="text-slate-300 text-sm">Launch a targeted email campaign to the 'At Risk' segment offering a 15% loyalty discount.</p>
+            <div class="space-y-6 mb-8">
+                <!-- Root Cause -->
+                <div class="flex gap-4">
+                    <div class="w-1 bg-indigo-500 rounded-full"></div>
+                    <div>
+                        <h4 class="font-bold text-indigo-300 text-sm mb-1">Root Cause Analysis</h4>
+                        <p class="text-slate-300 text-sm">{{ selectedInsight.rootCause }}</p>
+                    </div>
                 </div>
+
+                <!-- Recommendation -->
+                <div class="p-4 bg-white/5 rounded-xl border border-white/5">
+                    <h4 class="font-bold text-white text-sm mb-1"><i class="ph-fill ph-lightbulb text-yellow-400 mr-2"></i>Recommended Action</h4>
+                    <p class="text-slate-300 text-sm">{{ selectedInsight.recommendation }}</p>
+                </div>
+
+                <!-- Impact Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="p-4 bg-white/5 rounded-xl text-center">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Exp. Impact</p>
-                        <p class="text-lg font-bold text-emerald-400">+$12,500</p>
+                        <p class="text-xs text-slate-500 font-bold uppercase">Business Impact</p>
+                        <p class="text-lg font-bold text-emerald-400">{{ selectedInsight.impact }}</p>
                     </div>
                     <div class="p-4 bg-white/5 rounded-xl text-center">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Confidence</p>
+                        <p class="text-xs text-slate-500 font-bold uppercase">AI Confidence</p>
                         <p class="text-lg font-bold text-white">{{ selectedInsight.confidence }}%</p>
                     </div>
                 </div>
             </div>
 
+            <!-- Accountability Input -->
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 font-bold uppercase mb-2 block">Assign Owner</label>
+                <select class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                    <option>Me (Current User)</option>
+                    <option>Sales Team Lead</option>
+                    <option>Marketing VP</option>
+                </select>
+            </div>
+
             <button @click="commitAction" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
-                <i class="ph-bold ph-check"></i> Commit to Action Plan
+                <i class="ph-bold ph-check-square"></i> Commit & Track Result
             </button>
         </div>
     </div>
@@ -393,25 +393,28 @@
         data() {
             return {
                 view: 'dashboard',
-                role: 'CEO',
+                industry: 'SaaS', // SaaS, Retail, Finance
+                privacyMode: false,
                 prompt: '',
                 healthScore: 78,
                 selectedInsight: null,
                 
-                // MOCK INTELLIGENCE DATA
-                topInsights: [
-                    { type: 'risk', message: 'Churn rate spiked 15% in Enterprise segment', confidence: 92 },
-                    { type: 'opp', message: 'Upsell opportunity detected in Q3 cohort', confidence: 85 },
-                    { type: 'opp', message: 'Ad spend efficiency dropped below 2.0x', confidence: 78 }
-                ],
+                // INTELLIGENCE DATA (Dynamic based on Industry)
+                topInsights: [],
                 
-                actionLog: [
-                    { title: 'Increase Server Capacity', category: 'Infrastructure', date: '2 days ago', progress: 100, roi: '+$5k' },
-                    { title: 'Q3 Marketing Push', category: 'Growth', date: '1 week ago', progress: 45, roi: 'Pending' },
-                    { title: 'Hire Sales VP', category: 'HR', date: '2 weeks ago', progress: 20, roi: 'N/A' }
+                // AUDIT LOG (Trust Layer)
+                auditLogs: [
+                    { time: '10:42 AM', user: 'System', action: 'Anomaly Detected', logic: 'Variance > 15% in Expense Trend' },
+                    { time: '09:15 AM', user: 'John Doe', action: 'Simulation Run', logic: 'User inputs: +10% Price' },
+                    { time: 'Yesterday', user: 'Jane Smith', action: 'Metric Created', logic: 'Formula: Rev / Headcount' }
                 ],
 
-                // CHART DATA
+                actionLog: [
+                    { title: 'Increase Server Capacity', owner: 'DevOps Lead', category: 'Infrastructure', date: '2 days ago', progress: 100, roi: '+$5k' },
+                    { title: 'Q3 Marketing Push', owner: 'CMO', category: 'Growth', date: '1 week ago', progress: 45, roi: 'Pending' },
+                ],
+
+                // CHART
                 chartOptions: {
                     chart: { type: 'area', height: 350, toolbar: { show: false }, background: 'transparent', animations: { enabled: true } },
                     colors: ['#6366f1', '#10b981'],
@@ -423,39 +426,74 @@
                     xaxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun'], labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
                     yaxis: { labels: { style: { colors: '#94a3b8' } } }
                 },
-                series: [
-                    { name: 'Actual Revenue', data: [31000, 40000, 28000, 51000, 42000, 68000] },
-                    { name: 'AI Projection', data: [33000, 42000, 35000, 55000, 60000, 75000] }
-                ]
+                series: []
             }
         },
         computed: {
             latestInsight() {
-                return this.topInsights[0].message;
+                return this.topInsights.length > 0 ? this.topInsights[0].message : 'Scanning data streams...';
             },
             actionCount() {
                 return this.actionLog.filter(a => a.progress < 100).length;
+            },
+            industryLabels() {
+                if (this.industry === 'Retail') return { metricName: 'Gross Merchandise Value (GMV)', unit: '$' };
+                if (this.industry === 'Finance') return { metricName: 'Assets Under Management', unit: '$' };
+                return { metricName: 'Annual Recurring Revenue (ARR)', unit: '$' };
             }
         },
+        watch: {
+            industry() { this.refreshData(); }
+        },
         mounted() {
+            this.setIndustry('SaaS');
             this.initCharts();
         },
         methods: {
+            setIndustry(type) {
+                this.industry = type;
+                this.refreshData();
+            },
+            refreshData() {
+                // SIMULATE INDUSTRY LOGIC MODULE INJECTION
+                if(this.industry === 'SaaS') {
+                    this.topInsights = [
+                        { type: 'risk', message: 'Churn rate spiked 15% in Enterprise', rootCause: 'Competitor X launched a cheaper alternative last week.', recommendation: 'Offer 15% loyalty discount to annual plans.', impact: 'Save $45k ARR', confidence: 92 },
+                        { type: 'opp', message: 'Expansion revenue opportunity', rootCause: 'Usage limits exceeded by 20% of Silver tier users.', recommendation: 'Trigger upsell email campaign.', impact: '+$12k MRR', confidence: 85 }
+                    ];
+                    this.series = [{ name: 'Actual ARR', data: [31, 40, 28, 51, 42, 68] }, { name: 'AI Forecast', data: [33, 42, 35, 55, 60, 75] }];
+                } else if(this.industry === 'Retail') {
+                    this.topInsights = [
+                        { type: 'risk', message: 'Inventory Stockout Risk', rootCause: 'Supply chain delay in APAC region.', recommendation: 'Expedite shipping from secondary warehouse.', impact: 'Prevent $20k Loss', confidence: 89 },
+                        { type: 'opp', message: 'High-value basket correlation', rootCause: 'Customers buying shoes are 3x likely to buy socks.', recommendation: 'Add checkout bundle prompt.', impact: '+8% AOV', confidence: 94 }
+                    ];
+                    this.series = [{ name: 'Actual GMV', data: [120, 140, 110, 180, 200, 240] }, { name: 'AI Forecast', data: [125, 145, 130, 190, 210, 260] }];
+                } else {
+                    this.topInsights = [
+                        { type: 'risk', message: 'Portfolio Volatility Alert', rootCause: 'Tech sector correction > 5%.', recommendation: 'Rebalance defensive assets.', impact: 'Stabilize Beta', confidence: 96 }
+                    ];
+                    this.series = [{ name: 'AUM (Millions)', data: [8.5, 8.7, 8.4, 9.1, 9.0, 9.5] }, { name: 'AI Forecast', data: [8.6, 8.8, 8.9, 9.2, 9.3, 9.8] }];
+                }
+                
+                if(this.chartInstance) {
+                    this.chartInstance.updateSeries(this.series);
+                }
+            },
             initCharts() {
                 const chart = new ApexCharts(document.querySelector("#main-chart"), this.chartOptions);
                 chart.render();
-                // Store instance to update later if needed
                 this.chartInstance = chart;
             },
             handleAI() {
                 if(!this.prompt) return;
-                // Simulate NLP processing
-                if(this.prompt.toLowerCase().includes('report')) {
-                    this.view = 'story';
-                } else if(this.prompt.toLowerCase().includes('action')) {
-                    this.view = 'actions';
+                // NLP Engine Simulation
+                const p = this.prompt.toLowerCase();
+                if(p.includes('why')) {
+                    alert("Zenith AI: Analyzing correlations... The root cause appears to be seasonal variance combined with a marketing spend reduction in Q2.");
+                } else if(p.includes('simulate')) {
+                    this.runSimulation();
                 } else {
-                    alert(`Zenith AI: I have analyzed your request "${this.prompt}" and updated the dashboard view.`);
+                    alert(`Zenith AI: I have processed your request: "${this.prompt}"`);
                 }
                 this.prompt = '';
             },
@@ -463,25 +501,32 @@
                 this.selectedInsight = insight;
             },
             commitAction() {
+                // Add to Audit Log and Action Tracker
                 this.actionLog.unshift({
-                    title: 'Mitigate: ' + this.selectedInsight.message,
-                    category: 'AI Recommendation',
+                    title: 'Action: ' + this.selectedInsight.recommendation,
+                    owner: 'Current User',
+                    category: 'Decision Engine',
                     date: 'Just now',
                     progress: 0,
                     roi: 'Tracking...'
+                });
+                this.auditLogs.unshift({
+                    time: 'Just now',
+                    user: 'Current User',
+                    action: 'Decision Commited',
+                    logic: `Adopted AI Rec: ${this.selectedInsight.recommendation}`
                 });
                 this.selectedInsight = null;
                 this.view = 'actions';
             },
             exportBrief() {
-                alert("Generating PDF Report...");
-                // In production, this would generate a PDF via library
+                alert("Generating Executive Narrative PDF...");
             },
             runSimulation() {
-                // Simulate scenario
                 const newData = this.series[1].data.map(val => Math.round(val * 1.15));
-                this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Projected (Simulated)', data: newData }]);
-                this.healthScore = 85;
+                this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Simulated Scenario', data: newData }]);
+                this.healthScore = 88;
+                this.auditLogs.unshift({ time: 'Just now', user: 'Current User', action: 'Simulation', logic: '+15% Growth Scenario' });
             }
         }
     }).mount('#app');

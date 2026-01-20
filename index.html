@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metriq Zenith | Multi-Sector Intelligence</title>
+    <title>Metriq Zenith | Decision Intelligence Platform</title>
     
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -84,9 +84,11 @@
         
         <!-- SECTOR INTELLIGENCE SWITCHER -->
         <div class="hidden md:flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/5">
+            <button @click="setIndustry('Corp')" :class="{'bg-indigo-600 text-white': industry === 'Corp', 'text-slate-400 hover:text-white': industry !== 'Corp'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Corp</button>
             <button @click="setIndustry('SaaS')" :class="{'bg-indigo-600 text-white': industry === 'SaaS', 'text-slate-400 hover:text-white': industry !== 'SaaS'}" class="px-3 py-1 rounded text-xs font-bold transition-all">SaaS</button>
             <button @click="setIndustry('Retail')" :class="{'bg-indigo-600 text-white': industry === 'Retail', 'text-slate-400 hover:text-white': industry !== 'Retail'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Retail</button>
             <button @click="setIndustry('Health')" :class="{'bg-emerald-600 text-white': industry === 'Health', 'text-slate-400 hover:text-white': industry !== 'Health'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Health</button>
+            <button @click="setIndustry('Gov')" :class="{'bg-blue-600 text-white': industry === 'Gov', 'text-slate-400 hover:text-white': industry !== 'Gov'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Gov</button>
             <button @click="setIndustry('Finance')" :class="{'bg-indigo-600 text-white': industry === 'Finance', 'text-slate-400 hover:text-white': industry !== 'Finance'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Finance</button>
         </div>
 
@@ -125,7 +127,10 @@
                     <i class="ph-duotone ph-book-open-text text-xl"></i> <span class="hidden lg:block font-medium text-sm">Narrative Brief</span>
                 </button>
                 
-                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Capabilities</p>
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-6">Data Ops</p>
+                <button @click="view = 'data_studio'" :class="view === 'data_studio' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
+                    <i class="ph-duotone ph-table text-xl"></i> <span class="hidden lg:block font-medium text-sm">Data Studio</span>
+                </button>
                 <button @click="view = 'metrics'" :class="view === 'metrics' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
                     <i class="ph-duotone ph-function text-xl"></i> <span class="hidden lg:block font-medium text-sm">Metric Builder</span>
                 </button>
@@ -224,6 +229,75 @@
                             <p class="text-[10px] text-slate-500 uppercase tracking-widest">Net Improvement</p>
                             <p class="text-xl font-bold text-emerald-400">+12.5%</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: DATA STUDIO (NEW) -->
+            <div v-if="view === 'data_studio'" class="animate-in fade-in slide-in-from-bottom-4">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Data Studio</h2>
+                        <p class="text-slate-400 text-sm">Inspect, clean, and validate raw data streams.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="px-3 py-1.5 bg-slate-800 rounded-lg text-xs font-bold text-slate-300 border border-white/5 flex items-center gap-2">
+                            <i class="ph-bold ph-rows"></i> {{ gridData.length }} Rows
+                        </div>
+                        <div class="px-3 py-1.5 bg-slate-800 rounded-lg text-xs font-bold text-slate-300 border border-white/5 flex items-center gap-2">
+                            <i class="ph-bold ph-columns"></i> {{ gridHeaders.length }} Columns
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sanitization Bar -->
+                <div v-if="missingValueCount > 0" class="mb-6 bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i class="ph-fill ph-warning-circle text-rose-500 text-xl"></i>
+                        <div>
+                            <h4 class="font-bold text-rose-200 text-sm">Data Health Alert</h4>
+                            <p class="text-xs text-rose-300/70">Found {{ missingValueCount }} cells with missing or null values.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="cleanData('remove')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors">
+                            Remove Rows
+                        </button>
+                        <button @click="cleanData('impute')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition-colors">
+                            Auto-Fix (Impute)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Grid -->
+                <div class="glass-panel rounded-2xl overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900/80 text-xs uppercase font-bold text-slate-500 sticky top-0">
+                            <tr>
+                                <th v-for="header in gridHeaders" :key="header" class="px-6 py-4 whitespace-nowrap">{{ header }}</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            <tr v-for="(row, index) in gridData" :key="index" class="hover:bg-white/5 transition-colors group">
+                                <td v-for="(val, key) in row" :key="key" class="px-6 py-3 whitespace-nowrap">
+                                    <input 
+                                        v-model="gridData[index][key]" 
+                                        @change="refreshChartsFromGrid"
+                                        class="bg-transparent border-none focus:ring-1 focus:ring-indigo-500 rounded px-2 py-1 w-full text-slate-300 focus:text-white transition-colors"
+                                    >
+                                </td>
+                                <td class="px-6 py-3 text-right">
+                                    <button @click="deleteRow(index)" class="text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i class="ph-bold ph-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-if="gridData.length === 0" class="p-12 text-center text-slate-500">
+                        <i class="ph-duotone ph-table text-4xl mb-2"></i>
+                        <p>No data loaded. Import a CSV file to begin.</p>
                     </div>
                 </div>
             </div>
@@ -417,12 +491,20 @@
         data() {
             return {
                 view: 'dashboard',
-                industry: 'SaaS', // SaaS, Retail, Finance, Health
+                industry: 'SaaS', // SaaS, Retail, Finance, Health, Gov, Corp
                 privacyMode: false,
                 showUpload: false,
                 prompt: '',
                 healthScore: 78,
                 selectedInsight: null,
+                
+                // Data Studio States
+                gridHeaders: ['Month', 'Metric A', 'Metric B'],
+                gridData: [
+                    { Month: 'Jan', 'Metric A': 120, 'Metric B': 90 },
+                    { Month: 'Feb', 'Metric A': 140, 'Metric B': 95 },
+                    { Month: 'Mar', 'Metric A': 115, 'Metric B': 110 }
+                ],
                 
                 // INTELLIGENCE DATA (Dynamic based on Industry)
                 topInsights: [],
@@ -465,7 +547,18 @@
                 if (this.industry === 'Retail') return { metricName: 'Gross Merchandise Value (GMV)', unit: '$' };
                 if (this.industry === 'Finance') return { metricName: 'Assets Under Management', unit: '$' };
                 if (this.industry === 'Health') return { metricName: 'Patient Recovery Rate', unit: '%' };
+                if (this.industry === 'Gov') return { metricName: 'Budget Utilization', unit: '%' };
+                if (this.industry === 'Corp') return { metricName: 'EBITDA Margin', unit: '%' };
                 return { metricName: 'Annual Recurring Revenue (ARR)', unit: '$' };
+            },
+            missingValueCount() {
+                let count = 0;
+                this.gridData.forEach(row => {
+                    Object.values(row).forEach(val => {
+                        if (val === '' || val === null || val === undefined) count++;
+                    });
+                });
+                return count;
             }
         },
         watch: {
@@ -500,6 +593,18 @@
                         { type: 'opp', message: 'Bed Occupancy Optimization', rootCause: 'Discharge delays on Ward 4.', recommendation: 'Implement early discharge planning software.', impact: '+15% Capacity', confidence: 88 }
                     ];
                     this.series = [{ name: 'Recovery Rate (%)', data: [85, 87, 84, 88, 86, 89] }, { name: 'AI Target (%)', data: [86, 88, 89, 90, 91, 92] }];
+                } else if(this.industry === 'Gov') {
+                    this.topInsights = [
+                        { type: 'risk', message: 'Budget Utilization Variance', rootCause: 'Q3 Public Works spend 15% below allocation.', recommendation: 'Accelerate infrastructure projects.', impact: '98% Budget Compliance', confidence: 91 },
+                        { type: 'opp', message: 'Service Delivery Optimization', rootCause: 'Digital portal adoption reduces manual processing.', recommendation: 'Shift 20% staff to complex case management.', impact: '-30% Wait Times', confidence: 87 }
+                    ];
+                    this.series = [{ name: 'Budget Spent (%)', data: [15, 28, 42, 55, 65, 78] }, { name: 'Target (%)', data: [16, 32, 48, 64, 80, 96] }];
+                } else if(this.industry === 'Corp') {
+                    this.topInsights = [
+                        { type: 'risk', message: 'Margin Compression Alert', rootCause: 'Rising supplier costs not passed to customers.', recommendation: 'Review pricing strategy for Q4.', impact: '+5% EBITDA', confidence: 93 },
+                        { type: 'opp', message: 'OpEx Efficiency Gain', rootCause: 'Remote work policy reducing facility costs.', recommendation: 'Consolidate office leases.', impact: '+$2M Savings', confidence: 89 }
+                    ];
+                    this.series = [{ name: 'Net Profit ($M)', data: [12, 15, 13, 18, 22, 25] }, { name: 'AI Forecast ($M)', data: [14, 16, 15, 19, 24, 28] }];
                 } else {
                     this.topInsights = [
                         { type: 'risk', message: 'Portfolio Volatility Alert', rootCause: 'Tech sector correction > 5%.', recommendation: 'Rebalance defensive assets.', impact: 'Stabilize Beta', confidence: 96 }
@@ -557,13 +662,10 @@
                 alert("Generating Performance Narrative PDF...");
             },
             exportData() {
-                // Generate CSV
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Metric,Month,Value\n";
-                this.series.forEach(s => {
-                    s.data.forEach((val, i) => {
-                        csvContent += `${s.name},Month ${i+1},${val}\n`;
-                    });
+                csvContent += this.gridHeaders.join(",") + "\n";
+                this.gridData.forEach(row => {
+                    csvContent += Object.values(row).join(",") + "\n";
                 });
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
@@ -586,44 +688,91 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const text = e.target.result;
-                    // Improved CSV Parsing
                     const lines = text.trim().split('\n');
                     const headers = lines[0].split(',').map(h => h.trim());
-                    // Assume col 0 is categories (e.g., Month), col 1 is Metric 1, col 2 is Metric 2, etc.
+                    
+                    const newData = [];
                     const categories = [];
-                    // We need dynamic series
                     const dynamicSeries = []; 
                     
-                    // Init series containers based on header count (skipping col 0 which is X axis)
-                    for(let j=1; j<headers.length; j++) {
-                        dynamicSeries.push({ name: headers[j], data: [] });
-                    }
-
+                    // Build Grid Data
                     for(let i=1; i<lines.length; i++) {
                         const row = lines[i].split(',');
                         if(row.length < 2) continue;
-                        categories.push(row[0]);
                         
-                        // Push data to each series
-                        for(let j=1; j<row.length; j++) {
-                            if(dynamicSeries[j-1]) {
-                                dynamicSeries[j-1].data.push(Number(row[j]) || 0);
-                            }
-                        }
+                        const rowObj = {};
+                        headers.forEach((h, idx) => {
+                            rowObj[h] = row[idx] || '';
+                        });
+                        newData.push(rowObj);
+                        categories.push(row[0]);
                     }
 
+                    // Build Series for Chart
+                    for(let j=1; j<headers.length; j++) {
+                        dynamicSeries.push({ 
+                            name: headers[j], 
+                            data: newData.map(row => Number(row[headers[j]]) || 0) 
+                        });
+                    }
+
+                    // Update State
+                    this.gridHeaders = headers;
+                    this.gridData = newData;
+                    
                     // Update Chart
                     if (this.chartInstance) {
                         this.chartInstance.updateOptions({ xaxis: { categories: categories }});
                         this.chartInstance.updateSeries(dynamicSeries);
-                        this.series = dynamicSeries; // Sync local state
+                        this.series = dynamicSeries; 
                     }
 
-                    console.log("File loaded. Normalization Engine Triggered.");
-                    alert("File Imported Successfully. Visualizing " + dynamicSeries.length + " Metrics.");
+                    console.log("File loaded. Grid populated.");
+                    alert("File Imported Successfully. Data Studio Updated.");
                     this.showUpload = false;
                 };
                 reader.readAsText(file);
+            },
+            cleanData(action) {
+                if (action === 'remove') {
+                    this.gridData = this.gridData.filter(row => {
+                        return Object.values(row).every(val => val !== '' && val !== null);
+                    });
+                } else if (action === 'impute') {
+                    // Simple mean imputation
+                    this.gridHeaders.forEach(header => {
+                        const values = this.gridData.map(r => Number(r[header])).filter(v => !isNaN(v));
+                        const avg = values.length ? Math.round(values.reduce((a,b)=>a+b,0)/values.length) : 0;
+                        
+                        this.gridData.forEach(row => {
+                            if (row[header] === '' || row[header] === null) row[header] = avg;
+                        });
+                    });
+                }
+                this.refreshChartsFromGrid();
+                alert("Data Cleaned.");
+            },
+            deleteRow(index) {
+                this.gridData.splice(index, 1);
+                this.refreshChartsFromGrid();
+            },
+            refreshChartsFromGrid() {
+                // Re-sync charts from grid edits
+                const categories = this.gridData.map(r => r[this.gridHeaders[0]]);
+                const newSeries = [];
+                
+                for(let j=1; j<this.gridHeaders.length; j++) {
+                    newSeries.push({ 
+                        name: this.gridHeaders[j], 
+                        data: this.gridData.map(row => Number(row[this.gridHeaders[j]]) || 0) 
+                    });
+                }
+                
+                if (this.chartInstance) {
+                    this.chartInstance.updateOptions({ xaxis: { categories: categories }});
+                    this.chartInstance.updateSeries(newSeries);
+                    this.series = newSeries;
+                }
             }
         }
     }).mount('#app');

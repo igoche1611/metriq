@@ -403,6 +403,11 @@
                     class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12 outline-none"
                 >
                 <div class="hidden md:block pr-4">
+                    <button @click="fillPrompt" class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded hover:bg-indigo-500 hover:text-white transition-colors">
+                        Inspire Me
+                    </button>
+                </div>
+                <div class="hidden md:block pr-4">
                     <i class="ph-bold ph-microphone text-slate-500 hover:text-white cursor-pointer"></i>
                 </div>
             </div>
@@ -410,20 +415,33 @@
 
     </div>
 
-    <!-- FILE UPLOAD MODAL -->
+    <!-- FILE UPLOAD MODAL (Loading State Enabled) -->
     <div v-if="showUpload" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
         <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center relative border border-white/10">
-            <button @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-            <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
+            
+            <!-- CLOSE BUTTON (Hidden when loading) -->
+            <button v-if="!isUploading" @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+            
+            <!-- LOADING STATE -->
+            <div v-if="isUploading" class="flex flex-col items-center justify-center py-8">
+                <i class="ph-bold ph-spinner animate-spin text-5xl text-indigo-400 mb-6"></i>
+                <h3 class="text-xl font-bold text-white tracking-wide">Ingesting Data Stream</h3>
+                <p class="text-slate-400 text-sm mt-3 animate-pulse">Running normalization engine & validating schema...</p>
             </div>
-            <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
-            <p class="text-slate-400 mb-8">Upload CSV or JSON files to feed the Decision Engine.</p>
-            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json">
-            <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
-                <i class="ph-bold ph-upload-simple"></i> Select File
-            </button>
-            <p class="mt-4 text-xs text-slate-500 font-mono">AUTO-NORMALIZATION ACTIVE</p>
+
+            <!-- DEFAULT UPLOAD STATE -->
+            <div v-else>
+                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+                    <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
+                <p class="text-slate-400 mb-8">Upload CSV or JSON files to feed the Decision Engine.</p>
+                <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json">
+                <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                    <i class="ph-bold ph-upload-simple"></i> Select File
+                </button>
+                <p class="mt-4 text-xs text-slate-500 font-mono">AUTO-NORMALIZATION ACTIVE</p>
+            </div>
         </div>
     </div>
 
@@ -494,9 +512,15 @@
                 industry: 'SaaS', // SaaS, Retail, Finance, Health, Gov, Corp
                 privacyMode: false,
                 showUpload: false,
+                isUploading: false,
                 prompt: '',
                 healthScore: 78,
                 selectedInsight: null,
+                complexPrompts: [
+                    "Generate a multi-dimensional performance dashboard correlating monthly revenue with operational efficiency, including a 6-month predictive forecast and anomaly detection for cost outliers.",
+                    "Analyze Q3 customer acquisition costs against lifetime value, identify churn risk factors in the enterprise segment, and simulate a 10% budget reallocation to high-performing channels.",
+                    "Create a cross-sector impact report evaluating the correlation between employee engagement scores and productivity output, projecting Q4 outcomes with a 95% confidence interval."
+                ],
                 
                 // Data Studio States
                 gridHeaders: ['Month', 'Metric A', 'Metric B'],
@@ -625,10 +649,32 @@
                 chart.render();
                 this.chartInstance = chart;
             },
+            fillPrompt() {
+                // Cycle through complex prompts
+                const randomPrompt = this.complexPrompts[Math.floor(Math.random() * this.complexPrompts.length)];
+                this.prompt = randomPrompt;
+            },
             handleAI() {
                 if(!this.prompt) return;
                 const p = this.prompt.toLowerCase();
-                if(p.includes('why')) {
+                
+                if (p.includes('generate') || p.includes('dashboard') || p.includes('create')) {
+                    // Simulate creating a complex dashboard
+                    this.view = 'dashboard';
+                    this.healthScore = 92;
+                    this.topInsights = [
+                        { type: 'risk', message: 'Detected Cost Outlier in Q3 Operations', rootCause: 'Vendor rate hike in logistics.', recommendation: 'Renegotiate or switch providers.', impact: '+$150k Savings', confidence: 98 },
+                        { type: 'opp', message: 'Efficiency Trend Positive', rootCause: 'New automated workflow adoption.', recommendation: 'Scale automation to other depts.', impact: '+20% Speed', confidence: 91 }
+                    ];
+                    // Update chart to something new to show "creation"
+                    const newSeries = [
+                        { name: 'Revenue', data: [45, 52, 38, 24, 33, 60] },
+                        { name: 'Efficiency Score', data: [88, 85, 92, 95, 94, 98] }
+                    ];
+                    this.chartInstance.updateSeries(newSeries);
+                    this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
+                    
+                } else if(p.includes('why')) {
                     alert("Zenith AI: Root cause analysis indicates a correlation with seasonal staffing shortages.");
                 } else if(p.includes('simulate')) {
                     this.runSimulation();
@@ -685,51 +731,58 @@
                 const file = event.target.files[0];
                 if (!file) return;
                 
+                // SET LOADING STATE
+                this.isUploading = true;
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const text = e.target.result;
-                    const lines = text.trim().split('\n');
-                    const headers = lines[0].split(',').map(h => h.trim());
-                    
-                    const newData = [];
-                    const categories = [];
-                    const dynamicSeries = []; 
-                    
-                    // Build Grid Data
-                    for(let i=1; i<lines.length; i++) {
-                        const row = lines[i].split(',');
-                        if(row.length < 2) continue;
+                    // DELAY TO SHOW ANIMATION
+                    setTimeout(() => {
+                        const text = e.target.result;
+                        const lines = text.trim().split('\n');
+                        const headers = lines[0].split(',').map(h => h.trim());
                         
-                        const rowObj = {};
-                        headers.forEach((h, idx) => {
-                            rowObj[h] = row[idx] || '';
-                        });
-                        newData.push(rowObj);
-                        categories.push(row[0]);
-                    }
+                        const newData = [];
+                        const categories = [];
+                        const dynamicSeries = []; 
+                        
+                        for(let j=1; j<headers.length; j++) {
+                            dynamicSeries.push({ name: headers[j], data: [] });
+                        }
 
-                    // Build Series for Chart
-                    for(let j=1; j<headers.length; j++) {
-                        dynamicSeries.push({ 
-                            name: headers[j], 
-                            data: newData.map(row => Number(row[headers[j]]) || 0) 
-                        });
-                    }
+                        for(let i=1; i<lines.length; i++) {
+                            const row = lines[i].split(',');
+                            if(row.length < 2) continue;
+                            
+                            const rowObj = {};
+                            headers.forEach((h, idx) => {
+                                rowObj[h] = row[idx] || '';
+                            });
+                            newData.push(rowObj);
+                            categories.push(row[0]);
+                            
+                            for(let j=1; j<row.length; j++) {
+                                if(dynamicSeries[j-1]) {
+                                    dynamicSeries[j-1].data.push(Number(row[j]) || 0);
+                                }
+                            }
+                        }
 
-                    // Update State
-                    this.gridHeaders = headers;
-                    this.gridData = newData;
-                    
-                    // Update Chart
-                    if (this.chartInstance) {
-                        this.chartInstance.updateOptions({ xaxis: { categories: categories }});
-                        this.chartInstance.updateSeries(dynamicSeries);
-                        this.series = dynamicSeries; 
-                    }
+                        this.gridHeaders = headers;
+                        this.gridData = newData;
+                        
+                        if (this.chartInstance) {
+                            this.chartInstance.updateOptions({ xaxis: { categories: categories }});
+                            this.chartInstance.updateSeries(dynamicSeries);
+                            this.series = dynamicSeries; 
+                        }
 
-                    console.log("File loaded. Grid populated.");
-                    alert("File Imported Successfully. Data Studio Updated.");
-                    this.showUpload = false;
+                        console.log("File loaded. Grid populated.");
+                        
+                        // REMOVE ALERT, JUST CLOSE MODAL
+                        this.isUploading = false;
+                        this.showUpload = false;
+                    }, 1500);
                 };
                 reader.readAsText(file);
             },
@@ -739,7 +792,6 @@
                         return Object.values(row).every(val => val !== '' && val !== null);
                     });
                 } else if (action === 'impute') {
-                    // Simple mean imputation
                     this.gridHeaders.forEach(header => {
                         const values = this.gridData.map(r => Number(r[header])).filter(v => !isNaN(v));
                         const avg = values.length ? Math.round(values.reduce((a,b)=>a+b,0)/values.length) : 0;
@@ -757,7 +809,6 @@
                 this.refreshChartsFromGrid();
             },
             refreshChartsFromGrid() {
-                // Re-sync charts from grid edits
                 const categories = this.gridData.map(r => r[this.gridHeaders[0]]);
                 const newSeries = [];
                 

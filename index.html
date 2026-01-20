@@ -97,7 +97,7 @@
                 <i class="ph-bold ph-upload-simple"></i> Import
             </button>
             <button @click="exportData" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
-                <i class="ph-bold ph-download-simple"></i> Export Data
+                <i class="ph-bold ph-download-simple"></i> Export
             </button>
             <button @click="privacyMode = !privacyMode" class="text-slate-400 hover:text-white transition-colors" title="Toggle Privacy Mode">
                 <i :class="privacyMode ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'"></i>
@@ -164,7 +164,7 @@
                         <div>
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Performance Index</p>
                             <h2 class="text-4xl font-bold text-white mt-1" :class="{'privacy-blur': privacyMode}">{{ healthScore }}</h2>
-                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> Stable</p>
+                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> {{ healthTrend }}</p>
                         </div>
                         <div class="relative w-20 h-20 flex items-center justify-center">
                             <svg class="w-full h-full" viewBox="0 0 100 100">
@@ -264,7 +264,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="flex gap-2" v-if="missingValueCount > 0">
+                    <div class="flex gap-2">
                         <button @click="cleanData('remove')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors">
                             Remove Rows
                         </button>
@@ -521,6 +521,7 @@
                 isThinking: false,
                 prompt: '',
                 healthScore: 78,
+                healthTrend: 'Stable',
                 selectedInsight: null,
                 complexPrompts: [
                     "Generate a multi-dimensional performance dashboard correlating monthly revenue with operational efficiency, including a 6-month predictive forecast.",
@@ -529,7 +530,6 @@
                 ],
                 
                 // UNIFIED DATA CORE (The Single Source of Truth)
-                // Default Dummy Data
                 gridHeaders: ['Month', 'Metric A', 'Metric B'],
                 gridData: [
                     { Month: 'Jan', 'Metric A': 120, 'Metric B': 90 },
@@ -584,7 +584,10 @@
             // THE WATCHER: Anytime gridData changes (via AI, Upload, or Sector), update the chart
             gridData: {
                 handler() {
-                    this.updateChartFromGrid();
+                    // Prevent updates during bulk upload
+                    if(!this.isUploading) {
+                        this.updateChartFromGrid();
+                    }
                 },
                 deep: true
             },
@@ -679,7 +682,9 @@
                             { Month: 'Q2', 'New Metric A': 750, 'New Metric B': 400 },
                             { Month: 'Q3', 'New Metric A': 1000, 'New Metric B': 600 }
                         ];
-                        this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Generative Dashboard', logic: 'NLP Prompt Processing' });
+                        // Auto-calculate insight based on data
+                        this.topInsights = [{ type: 'opp', message: 'Growth Trend Identified', rootCause: 'Q3 Spike', recommendation: 'Invest in Q4', impact: '+25%', confidence: 99 }];
+                        this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
                         this.prompt = '';
                     } else if(p.includes('simulate')) {
                         this.runSimulation();
@@ -688,7 +693,7 @@
                         alert(`Zenith AI: I have processed your request. See Action Plan for details.`);
                         this.prompt = '';
                     }
-                }, 1200);
+                }, 1000);
             },
             openActionModal(insight) {
                 this.selectedInsight = insight;
@@ -701,6 +706,12 @@
                     date: 'Just now',
                     progress: 0,
                     roi: 'Tracking...'
+                });
+                this.auditLogs.unshift({
+                    time: 'Just now',
+                    user: 'Current User',
+                    action: 'Decision Commited',
+                    logic: `Adopted AI Rec: ${this.selectedInsight.recommendation}`
                 });
                 this.selectedInsight = null;
                 this.view = 'actions';
@@ -736,38 +747,55 @@
                 const file = event.target.files[0];
                 if (!file) return;
                 
+                // SET LOADING STATE
                 this.isUploading = true;
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    setTimeout(() => {
-                        try {
-                            const text = e.target.result;
-                            const lines = text.trim().split('\n').filter(l => l);
-                            if(lines.length < 2) throw new Error("Invalid CSV");
-                            
-                            const headers = lines[0].split(',').map(h => h.trim());
-                            const newData = [];
-                            
-                            for(let i=1; i<lines.length; i++) {
-                                const row = lines[i].split(',');
-                                let obj = {};
-                                headers.forEach((h, idx) => obj[h] = row[idx]);
-                                newData.push(obj);
-                            }
-                            
-                            // UPDATE SINGLE SOURCE OF TRUTH
-                            this.gridHeaders = headers;
-                            this.gridData = newData;
-                            
-                            console.log("File loaded.");
-                            this.isUploading = false;
-                            this.showUpload = false;
-                            if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 
-                        } catch(err) {
-                            alert("Error: " + err.message);
-                            this.isUploading = false;
+                    // Removed artificial delay for performance
+                    try {
+                        const text = e.target.result;
+                        const lines = text.trim().split('\n').filter(l => l);
+                        if(lines.length < 2) throw new Error("Invalid CSV");
+                        
+                        const headers = lines[0].split(',').map(h => h.trim());
+                        const newData = [];
+                        
+                        for(let i=1; i<lines.length; i++) {
+                            const row = lines[i].split(',');
+                            let obj = {};
+                            headers.forEach((h, idx) => {
+                                // Simple cleanup
+                                let val = row[idx] ? row[idx].replace('\r', '') : '';
+                                obj[h] = val;
+                            });
+                            newData.push(obj);
                         }
-                    }, 1500);
+                        
+                        // UPDATE SINGLE SOURCE OF TRUTH
+                        this.gridHeaders = headers;
+                        this.gridData = newData;
+                        
+                        // GENERATE NEW INSIGHTS BASED ON DATA
+                        const firstMetric = headers[1];
+                        const lastVal = Number(newData[newData.length-1][firstMetric]);
+                        const firstVal = Number(newData[0][firstMetric]);
+                        const growth = ((lastVal - firstVal) / firstVal * 100).toFixed(1);
+                        
+                        this.healthScore = growth > 0 ? 85 : 45;
+                        this.healthTrend = growth > 0 ? 'Positive Growth' : 'Declining';
+                        this.topInsights = [
+                            { type: growth > 0 ? 'opp' : 'risk', message: `Detected ${growth}% variance in ${firstMetric}`, rootCause: 'Imported Data Trend', recommendation: 'Review anomalies.', impact: 'High', confidence: 90 }
+                        ];
+
+                        console.log("File loaded.");
+                        this.isUploading = false;
+                        this.showUpload = false;
+                        if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 
+                    } catch(err) {
+                        alert("Error: " + err.message);
+                        this.isUploading = false;
+                    }
                 };
                 reader.readAsText(file);
             },

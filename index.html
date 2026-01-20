@@ -642,14 +642,24 @@
                 this.updateChart();
             },
             initCharts() {
-                // Initialize with current state data
+                // Destroy existing to prevent memory leaks or conflicts
+                if (this.chartInstance) {
+                    this.chartInstance.destroy();
+                }
+                
+                // Construct options with current state
                 const options = {
                     ...this.chartOptions,
                     series: this.series
                 };
-                const chart = new ApexCharts(document.querySelector("#main-chart"), options);
-                chart.render();
-                this.chartInstance = chart;
+                
+                // Ensure DOM element exists
+                const el = document.querySelector("#main-chart");
+                if(el) {
+                    const chart = new ApexCharts(el, options);
+                    chart.render();
+                    this.chartInstance = chart;
+                }
             },
             updateChart() {
                 // Safely update chart only if instance exists
@@ -815,11 +825,17 @@
                             this.gridData = newData;
                             this.series = dynamicSeries;
                             
-                            // Update Chart
-                            if (this.chartInstance) {
-                                this.chartInstance.updateOptions({ xaxis: { categories: categories }});
-                                this.chartInstance.updateSeries(dynamicSeries);
-                            }
+                            // Update Chart Options with new categories
+                            this.chartOptions = {
+                                ...this.chartOptions,
+                                xaxis: {
+                                    ...this.chartOptions.xaxis,
+                                    categories: categories
+                                }
+                            };
+
+                            // Re-initialize chart completely to avoid update errors
+                            this.initCharts();
 
                             console.log("File loaded. Grid populated.");
                             

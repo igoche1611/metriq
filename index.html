@@ -442,7 +442,7 @@
                 // CHART
                 chartOptions: {
                     chart: { type: 'area', height: 350, toolbar: { show: false }, background: 'transparent', animations: { enabled: true } },
-                    colors: ['#6366f1', '#10b981'],
+                    colors: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#06b6d4'], // Extended palette
                     stroke: { curve: 'smooth', width: 3 },
                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.6, opacityTo: 0.1 } },
                     theme: { mode: 'dark' },
@@ -586,10 +586,42 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const text = e.target.result;
+                    // Improved CSV Parsing
+                    const lines = text.trim().split('\n');
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    // Assume col 0 is categories (e.g., Month), col 1 is Metric 1, col 2 is Metric 2, etc.
+                    const categories = [];
+                    // We need dynamic series
+                    const dynamicSeries = []; 
+                    
+                    // Init series containers based on header count (skipping col 0 which is X axis)
+                    for(let j=1; j<headers.length; j++) {
+                        dynamicSeries.push({ name: headers[j], data: [] });
+                    }
+
+                    for(let i=1; i<lines.length; i++) {
+                        const row = lines[i].split(',');
+                        if(row.length < 2) continue;
+                        categories.push(row[0]);
+                        
+                        // Push data to each series
+                        for(let j=1; j<row.length; j++) {
+                            if(dynamicSeries[j-1]) {
+                                dynamicSeries[j-1].data.push(Number(row[j]) || 0);
+                            }
+                        }
+                    }
+
+                    // Update Chart
+                    if (this.chartInstance) {
+                        this.chartInstance.updateOptions({ xaxis: { categories: categories }});
+                        this.chartInstance.updateSeries(dynamicSeries);
+                        this.series = dynamicSeries; // Sync local state
+                    }
+
                     console.log("File loaded. Normalization Engine Triggered.");
-                    alert("File Imported Successfully. Auto-Normalization Complete.");
+                    alert("File Imported Successfully. Visualizing " + dynamicSeries.length + " Metrics.");
                     this.showUpload = false;
-                    this.runSimulation(); 
                 };
                 reader.readAsText(file);
             }

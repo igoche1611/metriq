@@ -233,7 +233,7 @@
                 </div>
             </div>
 
-            <!-- VIEW: DATA STUDIO (NEW) -->
+            <!-- VIEW: DATA STUDIO (Unified Data Core) -->
             <div v-if="view === 'data_studio'" class="animate-in fade-in slide-in-from-bottom-4">
                 <div class="flex justify-between items-center mb-6">
                     <div>
@@ -250,16 +250,21 @@
                     </div>
                 </div>
 
-                <!-- Sanitization Bar -->
-                <div v-if="missingValueCount > 0" class="mb-6 bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex justify-between items-center">
+                <!-- Sanitization Bar (Always Visible) -->
+                <div class="mb-6 bg-slate-800/50 border border-white/5 p-4 rounded-xl flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <i class="ph-fill ph-warning-circle text-rose-500 text-xl"></i>
+                        <i v-if="missingValueCount > 0" class="ph-fill ph-warning-circle text-rose-500 text-xl"></i>
+                        <i v-else class="ph-fill ph-check-circle text-emerald-500 text-xl"></i>
                         <div>
-                            <h4 class="font-bold text-rose-200 text-sm">Data Health Alert</h4>
-                            <p class="text-xs text-rose-300/70">Found {{ missingValueCount }} cells with missing or null values.</p>
+                            <h4 class="font-bold text-sm" :class="missingValueCount > 0 ? 'text-rose-200' : 'text-emerald-200'">
+                                {{ missingValueCount > 0 ? 'Data Health Alert' : 'Data is Clean' }}
+                            </h4>
+                            <p class="text-xs text-slate-400">
+                                {{ missingValueCount > 0 ? `Found ${missingValueCount} issues.` : 'No missing values detected.' }}
+                            </p>
                         </div>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2" v-if="missingValueCount > 0">
                         <button @click="cleanData('remove')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors">
                             Remove Rows
                         </button>
@@ -283,7 +288,6 @@
                                 <td v-for="(val, key) in row" :key="key" class="px-6 py-3 whitespace-nowrap">
                                     <input 
                                         v-model="gridData[index][key]" 
-                                        @change="refreshChartsFromGrid"
                                         class="bg-transparent border-none focus:ring-1 focus:ring-indigo-500 rounded px-2 py-1 w-full text-slate-300 focus:text-white transition-colors"
                                     >
                                 </td>
@@ -393,13 +397,14 @@
         <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] max-w-2xl z-30">
             <div class="glass-panel bg-slate-900/90 rounded-2xl p-2 flex items-center gap-4 shadow-2xl shadow-indigo-900/50 transition-all focus-within:scale-105 ring-1 ring-white/10 focus-within:ring-indigo-500">
                 <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 animate-pulse">
-                    <i class="ph-bold ph-sparkle text-white text-xl"></i>
+                    <i v-if="isThinking" class="ph-bold ph-spinner animate-spin text-white text-xl"></i>
+                    <i v-else class="ph-bold ph-sparkle text-white text-xl"></i>
                 </div>
                 <input 
                     type="text" 
                     v-model="prompt"
                     @keyup.enter="handleAI"
-                    placeholder="Ask Zenith... (e.g. 'Identify performance gaps' or 'Simulate 10% increase')" 
+                    placeholder="Ask Zenith... (e.g. 'Generate new forecast')" 
                     class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12 outline-none"
                 >
                 <div class="hidden md:block pr-4">
@@ -509,20 +514,22 @@
         data() {
             return {
                 view: 'dashboard',
-                industry: 'SaaS', // SaaS, Retail, Finance, Health, Gov, Corp
+                industry: 'SaaS',
                 privacyMode: false,
                 showUpload: false,
                 isUploading: false,
+                isThinking: false,
                 prompt: '',
                 healthScore: 78,
                 selectedInsight: null,
                 complexPrompts: [
-                    "Generate a multi-dimensional performance dashboard correlating monthly revenue with operational efficiency, including a 6-month predictive forecast and anomaly detection for cost outliers.",
-                    "Analyze Q3 customer acquisition costs against lifetime value, identify churn risk factors in the enterprise segment, and simulate a 10% budget reallocation to high-performing channels.",
-                    "Create a cross-sector impact report evaluating the correlation between employee engagement scores and productivity output, projecting Q4 outcomes with a 95% confidence interval."
+                    "Generate a multi-dimensional performance dashboard correlating monthly revenue with operational efficiency, including a 6-month predictive forecast.",
+                    "Analyze Q3 customer acquisition costs against lifetime value, identify churn risk factors in the enterprise segment.",
+                    "Create a cross-sector impact report evaluating the correlation between employee engagement scores and productivity output."
                 ],
                 
-                // Data Studio States
+                // UNIFIED DATA CORE (The Single Source of Truth)
+                // Default Dummy Data
                 gridHeaders: ['Month', 'Metric A', 'Metric B'],
                 gridData: [
                     { Month: 'Jan', 'Metric A': 120, 'Metric B': 90 },
@@ -530,34 +537,22 @@
                     { Month: 'Mar', 'Metric A': 115, 'Metric B': 110 }
                 ],
                 
-                // INTELLIGENCE DATA (Dynamic based on Industry)
                 topInsights: [],
-                
-                // AUDIT LOG (Trust Layer)
-                auditLogs: [
-                    { time: '10:42 AM', user: 'System', action: 'Anomaly Detected', logic: 'Variance > 15% in Expense Trend' },
-                    { time: '09:15 AM', user: 'John Doe', action: 'Simulation Run', logic: 'User inputs: +10% Price' },
-                    { time: 'Yesterday', user: 'Jane Smith', action: 'Metric Created', logic: 'Formula: Rev / Headcount' }
-                ],
+                auditLogs: [],
+                actionLog: [],
 
-                actionLog: [
-                    { title: 'Increase Server Capacity', owner: 'DevOps Lead', category: 'Infrastructure', date: '2 days ago', progress: 100, roi: '+$5k' },
-                    { title: 'Q3 Marketing Push', owner: 'CMO', category: 'Growth', date: '1 week ago', progress: 45, roi: 'Pending' },
-                ],
-
-                // CHART
+                // CHART CONFIG (Static)
                 chartOptions: {
                     chart: { type: 'area', height: 350, toolbar: { show: false }, background: 'transparent', animations: { enabled: true } },
-                    colors: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#06b6d4'], // Extended palette
+                    colors: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#06b6d4'],
                     stroke: { curve: 'smooth', width: 3 },
                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.6, opacityTo: 0.1 } },
                     theme: { mode: 'dark' },
                     grid: { borderColor: '#334155', strokeDashArray: 4 },
                     dataLabels: { enabled: false },
-                    xaxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun'], labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    xaxis: { labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
                     yaxis: { labels: { style: { colors: '#94a3b8' } } }
-                },
-                series: []
+                }
             }
         },
         computed: {
@@ -586,120 +581,114 @@
             }
         },
         watch: {
-            industry() { this.refreshData(); }
+            // THE WATCHER: Anytime gridData changes (via AI, Upload, or Sector), update the chart
+            gridData: {
+                handler() {
+                    this.updateChartFromGrid();
+                },
+                deep: true
+            },
+            industry() {
+                this.generateSectorData();
+            }
         },
         mounted() {
             this.setIndustry('SaaS');
-            // Ensure DOM is rendered before initializing chart to prevent race conditions
             this.$nextTick(() => {
-                this.initCharts();
+                this.initChart();
             });
         },
         methods: {
             setIndustry(type) {
                 this.industry = type;
-                this.refreshData();
+                this.generateSectorData();
             },
-            refreshData() {
-                // SECTOR INTELLIGENCE LOGIC
+            // Generates new GRID DATA based on sector, triggering the watcher
+            generateSectorData() {
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                let dataA = [], dataB = [];
+                
+                // MOCK GENERATOR
                 if(this.industry === 'SaaS') {
-                    this.topInsights = [
-                        { type: 'risk', message: 'Churn rate spiked 15% in Enterprise', rootCause: 'Competitor X launched a cheaper alternative last week.', recommendation: 'Offer 15% loyalty discount to annual plans.', impact: 'Save $45k ARR', confidence: 92 },
-                        { type: 'opp', message: 'Expansion revenue opportunity', rootCause: 'Usage limits exceeded by 20% of Silver tier users.', recommendation: 'Trigger upsell email campaign.', impact: '+$12k MRR', confidence: 85 }
-                    ];
-                    this.series = [{ name: 'Actual ARR', data: [31, 40, 28, 51, 42, 68] }, { name: 'AI Forecast', data: [33, 42, 35, 55, 60, 75] }];
-                } else if(this.industry === 'Retail') {
-                    this.topInsights = [
-                        { type: 'risk', message: 'Inventory Stockout Risk', rootCause: 'Supply chain delay in APAC region.', recommendation: 'Expedite shipping from secondary warehouse.', impact: 'Prevent $20k Loss', confidence: 89 },
-                        { type: 'opp', message: 'High-value basket correlation', rootCause: 'Customers buying shoes are 3x likely to buy socks.', recommendation: 'Add checkout bundle prompt.', impact: '+8% AOV', confidence: 94 }
-                    ];
-                    this.series = [{ name: 'Actual GMV', data: [120, 140, 110, 180, 200, 240] }, { name: 'AI Forecast', data: [125, 145, 130, 190, 210, 260] }];
+                    this.gridHeaders = ['Month', 'Actual ARR', 'AI Forecast'];
+                    dataA = [31, 40, 28, 51, 42, 68];
+                    dataB = [33, 42, 35, 55, 60, 75];
+                    this.topInsights = [{ type: 'risk', message: 'Churn rate spiked 15%', rootCause: 'Competitor Launch', recommendation: 'Offer loyalty discount.', impact: 'Save $45k ARR', confidence: 92 }];
                 } else if(this.industry === 'Health') {
-                    this.topInsights = [
-                        { type: 'risk', message: 'ER Wait Time Exceeds Baseline', rootCause: 'Unexpected viral case surge in triage.', recommendation: 'Activate overflow staff protocol.', impact: '-25% Wait Time', confidence: 95 },
-                        { type: 'opp', message: 'Bed Occupancy Optimization', rootCause: 'Discharge delays on Ward 4.', recommendation: 'Implement early discharge planning software.', impact: '+15% Capacity', confidence: 88 }
-                    ];
-                    this.series = [{ name: 'Recovery Rate (%)', data: [85, 87, 84, 88, 86, 89] }, { name: 'AI Target (%)', data: [86, 88, 89, 90, 91, 92] }];
-                } else if(this.industry === 'Gov') {
-                    this.topInsights = [
-                        { type: 'risk', message: 'Budget Utilization Variance', rootCause: 'Q3 Public Works spend 15% below allocation.', recommendation: 'Accelerate infrastructure projects.', impact: '98% Budget Compliance', confidence: 91 },
-                        { type: 'opp', message: 'Service Delivery Optimization', rootCause: 'Digital portal adoption reduces manual processing.', recommendation: 'Shift 20% staff to complex case management.', impact: '-30% Wait Times', confidence: 87 }
-                    ];
-                    this.series = [{ name: 'Budget Spent (%)', data: [15, 28, 42, 55, 65, 78] }, { name: 'Target (%)', data: [16, 32, 48, 64, 80, 96] }];
-                } else if(this.industry === 'Corp') {
-                    this.topInsights = [
-                        { type: 'risk', message: 'Margin Compression Alert', rootCause: 'Rising supplier costs not passed to customers.', recommendation: 'Review pricing strategy for Q4.', impact: '+5% EBITDA', confidence: 93 },
-                        { type: 'opp', message: 'OpEx Efficiency Gain', rootCause: 'Remote work policy reducing facility costs.', recommendation: 'Consolidate office leases.', impact: '+$2M Savings', confidence: 89 }
-                    ];
-                    this.series = [{ name: 'Net Profit ($M)', data: [12, 15, 13, 18, 22, 25] }, { name: 'AI Forecast ($M)', data: [14, 16, 15, 19, 24, 28] }];
+                    this.gridHeaders = ['Month', 'Recovery Rate', 'Target'];
+                    dataA = [85, 87, 84, 88, 86, 89];
+                    dataB = [86, 88, 89, 90, 91, 92];
+                    this.topInsights = [{ type: 'risk', message: 'ER Wait Time Exceeds Baseline', rootCause: 'Viral case surge.', recommendation: 'Activate overflow protocol.', impact: '-25% Wait Time', confidence: 95 }];
                 } else {
-                    this.topInsights = [
-                        { type: 'risk', message: 'Portfolio Volatility Alert', rootCause: 'Tech sector correction > 5%.', recommendation: 'Rebalance defensive assets.', impact: 'Stabilize Beta', confidence: 96 }
-                    ];
-                    this.series = [{ name: 'AUM (Millions)', data: [8.5, 8.7, 8.4, 9.1, 9.0, 9.5] }, { name: 'AI Forecast', data: [8.6, 8.8, 8.9, 9.2, 9.3, 9.8] }];
+                    // Default / Corp
+                    this.gridHeaders = ['Month', 'Revenue', 'Expenses'];
+                    dataA = [100, 120, 110, 140, 160, 180];
+                    dataB = [80, 90, 85, 95, 100, 110];
+                    this.topInsights = [{ type: 'opp', message: 'Efficiency Gain Detected', rootCause: 'Workflow Automation', recommendation: 'Scale to other depts.', impact: '+15% Output', confidence: 89 }];
                 }
-                
-                this.updateChart();
+
+                this.gridData = months.map((m, i) => {
+                    let row = {};
+                    row[this.gridHeaders[0]] = m;
+                    row[this.gridHeaders[1]] = dataA[i];
+                    row[this.gridHeaders[2]] = dataB[i];
+                    return row;
+                });
             },
-            initCharts() {
-                // Destroy existing to prevent memory leaks or conflicts
-                if (this.chartInstance) {
-                    this.chartInstance.destroy();
-                }
-                
-                // Construct options with current state
-                const options = {
-                    ...this.chartOptions,
-                    series: this.series
-                };
-                
-                // Ensure DOM element exists
-                const el = document.querySelector("#main-chart");
-                if(el) {
-                    const chart = new ApexCharts(el, options);
-                    chart.render();
-                    this.chartInstance = chart;
-                }
+            initChart() {
+                if(this.chartInstance) this.chartInstance.destroy();
+                this.chartInstance = new ApexCharts(document.querySelector("#main-chart"), this.chartOptions);
+                this.chartInstance.render();
+                this.updateChartFromGrid();
             },
-            updateChart() {
-                // Safely update chart only if instance exists
-                if(this.chartInstance) {
-                    this.chartInstance.updateSeries(this.series);
-                }
+            updateChartFromGrid() {
+                if (!this.gridData.length || !this.chartInstance) return;
+                
+                const xKey = this.gridHeaders[0]; // Assume first col is X
+                const yKeys = this.gridHeaders.slice(1);
+                
+                const categories = this.gridData.map(r => r[xKey]);
+                const series = yKeys.map(key => ({
+                    name: key,
+                    data: this.gridData.map(r => Number(r[key]) || 0)
+                }));
+
+                this.chartInstance.updateOptions({ xaxis: { categories } });
+                this.chartInstance.updateSeries(series);
             },
             fillPrompt() {
-                // Cycle through complex prompts
                 const randomPrompt = this.complexPrompts[Math.floor(Math.random() * this.complexPrompts.length)];
                 this.prompt = randomPrompt;
             },
             handleAI() {
                 if(!this.prompt) return;
-                const p = this.prompt.toLowerCase();
+                this.isThinking = true;
                 
-                if (p.includes('generate') || p.includes('dashboard') || p.includes('create')) {
-                    // Simulate creating a complex dashboard
-                    this.view = 'dashboard';
-                    this.healthScore = 92;
-                    this.topInsights = [
-                        { type: 'risk', message: 'Detected Cost Outlier in Q3 Operations', rootCause: 'Vendor rate hike in logistics.', recommendation: 'Renegotiate or switch providers.', impact: '+$150k Savings', confidence: 98 },
-                        { type: 'opp', message: 'Efficiency Trend Positive', rootCause: 'New automated workflow adoption.', recommendation: 'Scale automation to other depts.', impact: '+20% Speed', confidence: 91 }
-                    ];
-                    // Update chart to something new to show "creation"
-                    const newSeries = [
-                        { name: 'Revenue', data: [45, 52, 38, 24, 33, 60] },
-                        { name: 'Efficiency Score', data: [88, 85, 92, 95, 94, 98] }
-                    ];
-                    if(this.chartInstance) this.chartInstance.updateSeries(newSeries);
-                    this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
+                setTimeout(() => {
+                    this.isThinking = false;
+                    const p = this.prompt.toLowerCase();
                     
-                } else if(p.includes('why')) {
-                    alert("Zenith AI: Root cause analysis indicates a correlation with seasonal staffing shortages.");
-                } else if(p.includes('simulate')) {
-                    this.runSimulation();
-                } else {
-                    alert(`Zenith AI: I have processed your request: "${this.prompt}"`);
-                }
-                this.prompt = '';
+                    // AI LOGIC: UPDATES GRID DATA DIRECTLY
+                    if (p.includes('generate') || p.includes('dashboard')) {
+                        // Create fake "New" data
+                        this.view = 'dashboard';
+                        this.healthScore = 95;
+                        this.gridHeaders = ['Month', 'New Metric A', 'New Metric B'];
+                        this.gridData = [
+                            { Month: 'Q1', 'New Metric A': 500, 'New Metric B': 200 },
+                            { Month: 'Q2', 'New Metric A': 750, 'New Metric B': 400 },
+                            { Month: 'Q3', 'New Metric A': 1000, 'New Metric B': 600 }
+                        ];
+                        this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Generative Dashboard', logic: 'NLP Prompt Processing' });
+                        this.prompt = '';
+                    } else if(p.includes('simulate')) {
+                        this.runSimulation();
+                        this.prompt = '';
+                    } else {
+                        alert(`Zenith AI: I have processed your request. See Action Plan for details.`);
+                        this.prompt = '';
+                    }
+                }, 1200);
             },
             openActionModal(insight) {
                 this.selectedInsight = insight;
@@ -713,17 +702,11 @@
                     progress: 0,
                     roi: 'Tracking...'
                 });
-                this.auditLogs.unshift({
-                    time: 'Just now',
-                    user: 'Current User',
-                    action: 'Decision Commited',
-                    logic: `Adopted AI Rec: ${this.selectedInsight.recommendation}`
-                });
                 this.selectedInsight = null;
                 this.view = 'actions';
             },
             exportBrief() {
-                alert("Generating Performance Narrative PDF...");
+                alert("Generating PDF...");
             },
             exportData() {
                 let csvContent = "data:text/csv;charset=utf-8,";
@@ -740,8 +723,12 @@
                 link.remove();
             },
             runSimulation() {
-                const newData = this.series[1].data.map(val => Math.round(val * 1.15));
-                if(this.chartInstance) this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Simulated Scenario', data: newData }]);
+                // Modify existing Grid Data to simulate +15%
+                const targetKey = this.gridHeaders[1]; // Pick first metric
+                this.gridData = this.gridData.map(row => ({
+                    ...row,
+                    [targetKey]: Math.round(Number(row[targetKey]) * 1.15)
+                }));
                 this.healthScore = 88;
                 this.auditLogs.unshift({ time: 'Just now', user: 'Current User', action: 'Simulation', logic: '+15% Efficiency Scenario' });
             },
@@ -749,148 +736,62 @@
                 const file = event.target.files[0];
                 if (!file) return;
                 
-                // SET LOADING STATE
                 this.isUploading = true;
-                const extension = file.name.split('.').pop().toLowerCase();
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     setTimeout(() => {
                         try {
-                            const content = e.target.result;
-                            if (!content) throw new Error("Empty file");
-
-                            let newData = [];
-                            let headers = [];
-
-                            if (extension === 'json') {
-                                // JSON Parsing Strategy
-                                const parsed = JSON.parse(content);
-                                if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("JSON must be an array of objects.");
-                                
-                                headers = Object.keys(parsed[0]);
-                                newData = parsed;
-                            } else {
-                                // CSV / TSV Parsing Strategy
-                                const delimiter = (extension === 'tsv' || extension === 'txt') ? '\t' : ',';
-                                const lines = content.trim().split('\n').filter(line => line.trim() !== '');
-                                if (lines.length < 2) throw new Error("Invalid format: Need headers and data rows.");
-
-                                headers = lines[0].split(delimiter).map(h => h.trim());
-                                if (headers.length < 2) throw new Error("Invalid format: Need at least 2 columns.");
-
-                                for(let i=1; i<lines.length; i++) {
-                                    const row = lines[i].split(delimiter);
-                                    if(row.length < headers.length) continue; // Skip incomplete
-                                    
-                                    const rowObj = {};
-                                    headers.forEach((h, idx) => {
-                                        // Store as string/number safely
-                                        let val = row[idx] ? row[idx].trim() : '';
-                                        // Attempt number conversion for cleanliness in object, but keep as is mostly
-                                        rowObj[h] = val;
-                                    });
-                                    newData.push(rowObj);
-                                }
-                            }
-
-                            // Generate Series for Charting (Logic shared across formats)
-                            const categories = [];
-                            const dynamicSeries = []; 
+                            const text = e.target.result;
+                            const lines = text.trim().split('\n').filter(l => l);
+                            if(lines.length < 2) throw new Error("Invalid CSV");
                             
-                            // Initialize dynamic series based on headers (skipping first col = Category/X-Axis)
-                            for(let j=1; j<headers.length; j++) {
-                                dynamicSeries.push({ name: headers[j], data: [] });
+                            const headers = lines[0].split(',').map(h => h.trim());
+                            const newData = [];
+                            
+                            for(let i=1; i<lines.length; i++) {
+                                const row = lines[i].split(',');
+                                let obj = {};
+                                headers.forEach((h, idx) => obj[h] = row[idx]);
+                                newData.push(obj);
                             }
-
-                            // Populate series data
-                            newData.forEach(row => {
-                                categories.push(row[headers[0]]); // First column is X-axis label
-                                
-                                for(let j=1; j<headers.length; j++) {
-                                    if(dynamicSeries[j-1]) {
-                                        // Strict number parsing: remove currency symbols, commas if present in string
-                                        let rawVal = row[headers[j]];
-                                        if (typeof rawVal === 'string') {
-                                            rawVal = rawVal.replace(/[$,]/g, '');
-                                        }
-                                        const val = parseFloat(rawVal);
-                                        dynamicSeries[j-1].data.push(isNaN(val) ? 0 : val);
-                                    }
-                                }
-                            });
-
-                            // Update Application State
+                            
+                            // UPDATE SINGLE SOURCE OF TRUTH
                             this.gridHeaders = headers;
                             this.gridData = newData;
-                            this.series = dynamicSeries;
                             
-                            // Update Chart Options with new categories
-                            this.chartOptions = {
-                                ...this.chartOptions,
-                                xaxis: {
-                                    ...this.chartOptions.xaxis,
-                                    categories: categories
-                                }
-                            };
-
-                            // Re-initialize chart completely to avoid update errors
-                            this.initCharts();
-
-                            console.log("File loaded. Grid populated.");
-                            
-                        } catch (err) {
-                            console.error(err);
-                            alert("Error parsing file: " + err.message);
-                        } finally {
+                            console.log("File loaded.");
                             this.isUploading = false;
                             this.showUpload = false;
                             if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 
+                        } catch(err) {
+                            alert("Error: " + err.message);
+                            this.isUploading = false;
                         }
-                    }, 1500); // 1.5s delay for effect
+                    }, 1500);
                 };
                 reader.readAsText(file);
             },
             cleanData(action) {
                 if (action === 'remove') {
-                    this.gridData = this.gridData.filter(row => {
-                        return Object.values(row).every(val => val !== '' && val !== null);
-                    });
-                } else if (action === 'impute') {
-                    this.gridHeaders.forEach(header => {
-                        const values = this.gridData.map(r => Number(r[header])).filter(v => !isNaN(v));
-                        const avg = values.length ? Math.round(values.reduce((a,b)=>a+b,0)/values.length) : 0;
-                        
-                        this.gridData.forEach(row => {
-                            if (row[header] === '' || row[header] === null) row[header] = avg;
-                        });
+                    this.gridData = this.gridData.filter(row => Object.values(row).every(v => v !== '' && v !== null && v !== undefined));
+                } else {
+                    // Impute
+                    this.gridHeaders.forEach(h => {
+                       // Calc Avg
+                       const nums = this.gridData.map(r => parseFloat(r[h])).filter(n => !isNaN(n));
+                       const avg = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length) : 0;
+                       this.gridData.forEach(r => {
+                           if(r[h] === '' || r[h] == null) r[h] = avg;
+                       });
                     });
                 }
-                this.refreshChartsFromGrid();
-                alert("Data Cleaned.");
             },
             deleteRow(index) {
                 this.gridData.splice(index, 1);
-                this.refreshChartsFromGrid();
             },
             refreshChartsFromGrid() {
-                if (this.gridData.length === 0) return;
-
-                const categories = this.gridData.map(r => r[this.gridHeaders[0]]);
-                const newSeries = [];
-                
-                for(let j=1; j<this.gridHeaders.length; j++) {
-                    newSeries.push({ 
-                        name: this.gridHeaders[j], 
-                        data: this.gridData.map(row => Number(row[this.gridHeaders[j]]) || 0) 
-                    });
-                }
-                
-                if (this.chartInstance) {
-                    this.chartInstance.updateOptions({ xaxis: { categories: categories }});
-                    this.chartInstance.updateSeries(newSeries);
-                    this.series = newSeries;
-                }
+                // Triggered by input @change, essentially just forces update via watcher
+                this.updateChartFromGrid();
             }
         }
     }).mount('#app');

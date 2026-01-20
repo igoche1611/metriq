@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metriq Zenith | Decision Intelligence Platform</title>
+    <title>Metriq Zenith | Multi-Sector Intelligence</title>
     
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,19 +82,26 @@
             <span class="font-bold text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">METRIQ <span class="font-light text-indigo-400">ZENITH</span></span>
         </div>
         
-        <!-- INDUSTRY LOGIC MODULE SWITCHER -->
+        <!-- SECTOR INTELLIGENCE SWITCHER -->
         <div class="hidden md:flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/5">
-            <button @click="setIndustry('SaaS')" :class="{'bg-indigo-600 text-white': industry === 'SaaS', 'text-slate-400 hover:text-white': industry !== 'SaaS'}" class="px-3 py-1 rounded text-xs font-bold transition-all">SaaS Mode</button>
-            <button @click="setIndustry('Retail')" :class="{'bg-indigo-600 text-white': industry === 'Retail', 'text-slate-400 hover:text-white': industry !== 'Retail'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Retail Mode</button>
-            <button @click="setIndustry('Finance')" :class="{'bg-indigo-600 text-white': industry === 'Finance', 'text-slate-400 hover:text-white': industry !== 'Finance'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Finance Mode</button>
+            <button @click="setIndustry('SaaS')" :class="{'bg-indigo-600 text-white': industry === 'SaaS', 'text-slate-400 hover:text-white': industry !== 'SaaS'}" class="px-3 py-1 rounded text-xs font-bold transition-all">SaaS</button>
+            <button @click="setIndustry('Retail')" :class="{'bg-indigo-600 text-white': industry === 'Retail', 'text-slate-400 hover:text-white': industry !== 'Retail'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Retail</button>
+            <button @click="setIndustry('Health')" :class="{'bg-emerald-600 text-white': industry === 'Health', 'text-slate-400 hover:text-white': industry !== 'Health'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Health</button>
+            <button @click="setIndustry('Finance')" :class="{'bg-indigo-600 text-white': industry === 'Finance', 'text-slate-400 hover:text-white': industry !== 'Finance'}" class="px-3 py-1 rounded text-xs font-bold transition-all">Finance</button>
         </div>
 
         <div class="flex items-center gap-4">
+            <button @click="showUpload = true" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <i class="ph-bold ph-upload-simple"></i> Import
+            </button>
+            <button @click="exportData" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <i class="ph-bold ph-download-simple"></i> Export Data
+            </button>
             <button @click="privacyMode = !privacyMode" class="text-slate-400 hover:text-white transition-colors" title="Toggle Privacy Mode">
                 <i :class="privacyMode ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'"></i>
             </button>
-            <button @click="exportBrief" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
-                <i class="ph-bold ph-file-pdf"></i> Brief
+            <button @click="exportBrief" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all text-white text-xs font-bold uppercase tracking-wider">
+                <i class="ph-bold ph-file-pdf"></i> Report
             </button>
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20 shadow-inner">JD</div>
         </div>
@@ -108,7 +115,7 @@
             <div class="space-y-1 px-3">
                 <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 mt-2">Intelligence</p>
                 <button @click="view = 'dashboard'" :class="view === 'dashboard' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group">
-                    <i class="ph-duotone ph-chart-polar text-xl"></i> <span class="hidden lg:block font-medium text-sm">Decision Board</span>
+                    <i class="ph-duotone ph-chart-polar text-xl"></i> <span class="hidden lg:block font-medium text-sm">Performance Board</span>
                 </button>
                 <button @click="view = 'actions'" :class="view === 'actions' ? 'glass-active text-indigo-300' : 'text-slate-400 hover:bg-white/5'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative">
                     <i class="ph-duotone ph-check-square-offset text-xl"></i> <span class="hidden lg:block font-medium text-sm">Action Plan</span>
@@ -144,22 +151,22 @@
             <!-- DASHBOARD VIEW -->
             <div v-if="view === 'dashboard'" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
-                <!-- BUSINESS HEALTH ENGINE -->
+                <!-- PERFORMANCE HEALTH ENGINE -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     <!-- Composite Score -->
                     <div class="glass-panel p-6 rounded-2xl flex items-center justify-between relative overflow-hidden group">
                         <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent"></div>
                         <div>
-                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Health Index</p>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Performance Index</p>
                             <h2 class="text-4xl font-bold text-white mt-1" :class="{'privacy-blur': privacyMode}">{{ healthScore }}</h2>
-                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> Stable Growth</p>
+                            <p class="text-xs text-emerald-400 font-bold mt-2 flex items-center gap-1"><i class="ph-bold ph-trend-up"></i> Stable</p>
                         </div>
                         <div class="relative w-20 h-20 flex items-center justify-center">
                             <svg class="w-full h-full" viewBox="0 0 100 100">
                                 <circle class="text-slate-700 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
                                 <circle class="text-emerald-500 stroke-current health-ring" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" :stroke-dasharray="251" :stroke-dashoffset="251 - (251 * healthScore / 100)"></circle>
                             </svg>
-                            <i class="ph-fill ph-heartbeat text-emerald-500 absolute text-xl"></i>
+                            <i class="ph-fill ph-activity text-emerald-500 absolute text-xl"></i>
                         </div>
                     </div>
 
@@ -167,7 +174,7 @@
                     <div v-for="insight in topInsights" class="glass-panel p-5 rounded-2xl border-l-4 relative group hover:bg-white/5 transition-all" :class="insight.type === 'risk' ? 'border-rose-500' : 'border-indigo-500'">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded" :class="insight.type === 'risk' ? 'bg-rose-500/20 text-rose-300' : 'bg-indigo-500/20 text-indigo-300'">
-                                {{ insight.type === 'risk' ? 'Anomaly Detected' : 'Opportunity' }}
+                                {{ insight.type === 'risk' ? 'Alert' : 'Opportunity' }}
                             </span>
                             <span class="text-[10px] text-slate-500">{{ insight.confidence }}% Conf.</span>
                         </div>
@@ -183,7 +190,7 @@
                     <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
                         <div class="flex justify-between items-center mb-4">
                             <div>
-                                <h3 class="font-bold text-slate-200">{{ industryLabels.metricName }} Performance</h3>
+                                <h3 class="font-bold text-slate-200">{{ industryLabels.metricName }} Trends</h3>
                                 <p class="text-xs text-slate-500">Historical vs. AI Forecast (Confidence: High)</p>
                             </div>
                             <div class="flex gap-2">
@@ -209,13 +216,13 @@
                                     <div class="h-1 flex-1 bg-slate-700 rounded-full overflow-hidden">
                                         <div class="h-full bg-emerald-500" :style="{width: action.progress + '%'}"></div>
                                     </div>
-                                    <span class="text-[10px] text-emerald-400">{{ action.roi }} ROI</span>
+                                    <span class="text-[10px] text-emerald-400">{{ action.roi }} Impact</span>
                                 </div>
                             </div>
                         </div>
                         <div class="mt-4 pt-4 border-t border-white/5 text-center">
-                            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Decision Impact</p>
-                            <p class="text-xl font-bold text-emerald-400">+$124,500</p>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Net Improvement</p>
+                            <p class="text-xl font-bold text-emerald-400">+12.5%</p>
                         </div>
                     </div>
                 </div>
@@ -226,11 +233,11 @@
                 <h2 class="text-2xl font-bold text-white mb-6">No-Code Metric Engine</h2>
                 <div class="glass-panel p-8 rounded-2xl">
                     <div class="flex gap-4 items-center mb-6">
-                        <div class="bg-indigo-600/20 p-2 rounded text-indigo-400 font-mono text-sm">[ Revenue ]</div>
+                        <div class="bg-indigo-600/20 p-2 rounded text-indigo-400 font-mono text-sm">[ {{ industryLabels.metricName }} ]</div>
                         <i class="ph-bold ph-divide text-slate-500"></i>
-                        <div class="bg-purple-600/20 p-2 rounded text-purple-400 font-mono text-sm">[ Employee Count ]</div>
+                        <div class="bg-purple-600/20 p-2 rounded text-purple-400 font-mono text-sm">[ {{ industry === 'Health' ? 'Staff Count' : 'Cost' }} ]</div>
                         <i class="ph-bold ph-equals text-slate-500"></i>
-                        <div class="border-b border-indigo-500 text-white font-bold px-2 py-1">Rev Per Head</div>
+                        <div class="border-b border-indigo-500 text-white font-bold px-2 py-1">Efficiency Ratio</div>
                     </div>
                     <p class="text-slate-400 text-sm mb-6">Define custom logic using plain English or drag-and-drop variables. The system will back-test this metric against historical data.</p>
                     <button class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center gap-2">
@@ -270,7 +277,7 @@
                     <div class="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
                     <div class="flex justify-between items-start mb-8">
                         <div>
-                            <h1 class="text-3xl font-bold text-slate-900 mb-2">Executive Strategy Brief</h1>
+                            <h1 class="text-3xl font-bold text-slate-900 mb-2">Performance Strategy Brief</h1>
                             <p class="text-slate-500">Generated on {{ new Date().toLocaleDateString() }}</p>
                         </div>
                         <div class="text-right">
@@ -282,8 +289,8 @@
                     <div class="prose prose-slate max-w-none">
                         <h3>1. Executive Summary</h3>
                         <p>
-                            Based on the current trajectory, the business is demonstrating a <strong class="text-emerald-600">strong growth signal (Health Score: {{ healthScore }})</strong>. 
-                            {{ industryLabels.metricName }} is projected to exceed Q4 targets by 12% if current churn reduction strategies are maintained.
+                            Based on the current trajectory, the organization is demonstrating a <strong class="text-emerald-600">stable performance signal (Index: {{ healthScore }})</strong>. 
+                            {{ industryLabels.metricName }} is projected to vary by 12% if current mitigation strategies are maintained.
                         </p>
 
                         <h3>2. Critical Risks & Anomalies</h3>
@@ -297,9 +304,9 @@
                         <p>To maximize the current opportunity window, the Decision Engine recommends:</p>
                         <div class="not-prose grid gap-4 my-4">
                             <div class="p-4 bg-white border border-slate-200 shadow-sm rounded-lg border-l-4 border-indigo-600">
-                                <h4 class="font-bold text-indigo-900">Action: Reallocate Ad Spend</h4>
-                                <p class="text-sm text-slate-600">Root Cause: Efficiency drop in Display channel.</p>
-                                <p class="text-sm text-slate-600 font-bold mt-1">Expected Impact: +$45k Revenue.</p>
+                                <h4 class="font-bold text-indigo-900">Action: {{ topInsights[0]?.recommendation || 'Optimize Allocation' }}</h4>
+                                <p class="text-sm text-slate-600">Root Cause: {{ topInsights[0]?.rootCause || 'Variance in baseline metrics.' }}</p>
+                                <p class="text-sm text-slate-600 font-bold mt-1">Expected Impact: {{ topInsights[0]?.impact || 'Stabilization' }}</p>
                             </div>
                         </div>
                     </div>
@@ -318,7 +325,7 @@
                     type="text" 
                     v-model="prompt"
                     @keyup.enter="handleAI"
-                    placeholder="Ask Zenith... (e.g. 'Why did churn spike?' or 'Simulate 10% growth')" 
+                    placeholder="Ask Zenith... (e.g. 'Identify performance gaps' or 'Simulate 10% increase')" 
                     class="bg-transparent border-none w-full text-lg placeholder-slate-500 focus:ring-0 text-white h-12 outline-none"
                 >
                 <div class="hidden md:block pr-4">
@@ -327,6 +334,23 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- FILE UPLOAD MODAL -->
+    <div v-if="showUpload" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
+        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center relative border border-white/10">
+            <button @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+            <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+                <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
+            <p class="text-slate-400 mb-8">Upload CSV or JSON files to feed the Decision Engine.</p>
+            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json">
+            <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-upload-simple"></i> Select File
+            </button>
+            <p class="mt-4 text-xs text-slate-500 font-mono">AUTO-NORMALIZATION ACTIVE</p>
+        </div>
     </div>
 
     <!-- DECISION INTELLIGENCE MODAL (Root Cause & Action) -->
@@ -358,7 +382,7 @@
                 <!-- Impact Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="p-4 bg-white/5 rounded-xl text-center">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Business Impact</p>
+                        <p class="text-xs text-slate-500 font-bold uppercase">Expected Impact</p>
                         <p class="text-lg font-bold text-emerald-400">{{ selectedInsight.impact }}</p>
                     </div>
                     <div class="p-4 bg-white/5 rounded-xl text-center">
@@ -373,8 +397,8 @@
                 <label class="text-xs text-slate-500 font-bold uppercase mb-2 block">Assign Owner</label>
                 <select class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                     <option>Me (Current User)</option>
-                    <option>Sales Team Lead</option>
-                    <option>Marketing VP</option>
+                    <option>Department Lead</option>
+                    <option>External Consultant</option>
                 </select>
             </div>
 
@@ -393,8 +417,9 @@
         data() {
             return {
                 view: 'dashboard',
-                industry: 'SaaS', // SaaS, Retail, Finance
+                industry: 'SaaS', // SaaS, Retail, Finance, Health
                 privacyMode: false,
+                showUpload: false,
                 prompt: '',
                 healthScore: 78,
                 selectedInsight: null,
@@ -439,6 +464,7 @@
             industryLabels() {
                 if (this.industry === 'Retail') return { metricName: 'Gross Merchandise Value (GMV)', unit: '$' };
                 if (this.industry === 'Finance') return { metricName: 'Assets Under Management', unit: '$' };
+                if (this.industry === 'Health') return { metricName: 'Patient Recovery Rate', unit: '%' };
                 return { metricName: 'Annual Recurring Revenue (ARR)', unit: '$' };
             }
         },
@@ -455,7 +481,7 @@
                 this.refreshData();
             },
             refreshData() {
-                // SIMULATE INDUSTRY LOGIC MODULE INJECTION
+                // SECTOR INTELLIGENCE LOGIC
                 if(this.industry === 'SaaS') {
                     this.topInsights = [
                         { type: 'risk', message: 'Churn rate spiked 15% in Enterprise', rootCause: 'Competitor X launched a cheaper alternative last week.', recommendation: 'Offer 15% loyalty discount to annual plans.', impact: 'Save $45k ARR', confidence: 92 },
@@ -468,6 +494,12 @@
                         { type: 'opp', message: 'High-value basket correlation', rootCause: 'Customers buying shoes are 3x likely to buy socks.', recommendation: 'Add checkout bundle prompt.', impact: '+8% AOV', confidence: 94 }
                     ];
                     this.series = [{ name: 'Actual GMV', data: [120, 140, 110, 180, 200, 240] }, { name: 'AI Forecast', data: [125, 145, 130, 190, 210, 260] }];
+                } else if(this.industry === 'Health') {
+                    this.topInsights = [
+                        { type: 'risk', message: 'ER Wait Time Exceeds Baseline', rootCause: 'Unexpected viral case surge in triage.', recommendation: 'Activate overflow staff protocol.', impact: '-25% Wait Time', confidence: 95 },
+                        { type: 'opp', message: 'Bed Occupancy Optimization', rootCause: 'Discharge delays on Ward 4.', recommendation: 'Implement early discharge planning software.', impact: '+15% Capacity', confidence: 88 }
+                    ];
+                    this.series = [{ name: 'Recovery Rate (%)', data: [85, 87, 84, 88, 86, 89] }, { name: 'AI Target (%)', data: [86, 88, 89, 90, 91, 92] }];
                 } else {
                     this.topInsights = [
                         { type: 'risk', message: 'Portfolio Volatility Alert', rootCause: 'Tech sector correction > 5%.', recommendation: 'Rebalance defensive assets.', impact: 'Stabilize Beta', confidence: 96 }
@@ -480,16 +512,19 @@
                 }
             },
             initCharts() {
-                const chart = new ApexCharts(document.querySelector("#main-chart"), this.chartOptions);
+                const options = {
+                    ...this.chartOptions,
+                    series: this.series
+                };
+                const chart = new ApexCharts(document.querySelector("#main-chart"), options);
                 chart.render();
                 this.chartInstance = chart;
             },
             handleAI() {
                 if(!this.prompt) return;
-                // NLP Engine Simulation
                 const p = this.prompt.toLowerCase();
                 if(p.includes('why')) {
-                    alert("Zenith AI: Analyzing correlations... The root cause appears to be seasonal variance combined with a marketing spend reduction in Q2.");
+                    alert("Zenith AI: Root cause analysis indicates a correlation with seasonal staffing shortages.");
                 } else if(p.includes('simulate')) {
                     this.runSimulation();
                 } else {
@@ -501,7 +536,6 @@
                 this.selectedInsight = insight;
             },
             commitAction() {
-                // Add to Audit Log and Action Tracker
                 this.actionLog.unshift({
                     title: 'Action: ' + this.selectedInsight.recommendation,
                     owner: 'Current User',
@@ -520,13 +554,44 @@
                 this.view = 'actions';
             },
             exportBrief() {
-                alert("Generating Executive Narrative PDF...");
+                alert("Generating Performance Narrative PDF...");
+            },
+            exportData() {
+                // Generate CSV
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Metric,Month,Value\n";
+                this.series.forEach(s => {
+                    s.data.forEach((val, i) => {
+                        csvContent += `${s.name},Month ${i+1},${val}\n`;
+                    });
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "metriq_data_export.csv");
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
             },
             runSimulation() {
                 const newData = this.series[1].data.map(val => Math.round(val * 1.15));
                 this.chartInstance.updateSeries([{ data: this.series[0].data }, { name: 'Simulated Scenario', data: newData }]);
                 this.healthScore = 88;
-                this.auditLogs.unshift({ time: 'Just now', user: 'Current User', action: 'Simulation', logic: '+15% Growth Scenario' });
+                this.auditLogs.unshift({ time: 'Just now', user: 'Current User', action: 'Simulation', logic: '+15% Efficiency Scenario' });
+            },
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    console.log("File loaded. Normalization Engine Triggered.");
+                    alert("File Imported Successfully. Auto-Normalization Complete.");
+                    this.showUpload = false;
+                    this.runSimulation(); 
+                };
+                reader.readAsText(file);
             }
         }
     }).mount('#app');
@@ -534,4 +599,3 @@
 
 </body>
 </html>
-

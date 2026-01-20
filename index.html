@@ -93,11 +93,11 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <button @click="showUpload = true" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <button @click="triggerUpload" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
                 <i class="ph-bold ph-upload-simple"></i> Import
             </button>
             <button @click="exportData" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
-                <i class="ph-bold ph-download-simple"></i> Export Data
+                <i class="ph-bold ph-download-simple"></i> Export
             </button>
             <button @click="privacyMode = !privacyMode" class="text-slate-400 hover:text-white transition-colors" title="Toggle Privacy Mode">
                 <i :class="privacyMode ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'"></i>
@@ -106,6 +106,9 @@
                 <i class="ph-bold ph-file-pdf"></i> Report
             </button>
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20 shadow-inner">JD</div>
+            
+            <!-- HIDDEN FILE INPUT -->
+            <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json,.tsv,.txt">
         </div>
     </nav>
 
@@ -190,7 +193,7 @@
                     </div>
                 </div>
 
-                <!-- MAIN CHART SECTION with Predictive Layer -->
+                <!-- MAIN CHART SECTION -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
                         <div class="flex justify-between items-center mb-4">
@@ -250,7 +253,7 @@
                     </div>
                 </div>
 
-                <!-- Sanitization Bar -->
+                <!-- Sanitization Bar (Always Visible) -->
                 <div class="mb-6 bg-slate-800/50 border border-white/5 p-4 rounded-xl flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <i v-if="missingValueCount > 0" class="ph-fill ph-warning-circle text-rose-500 text-xl"></i>
@@ -288,7 +291,6 @@
                                 <td v-for="header in gridHeaders" :key="header" class="px-6 py-3 whitespace-nowrap">
                                     <input 
                                         v-model="gridData[index][header]" 
-                                        @change="refreshChartsFromGrid"
                                         class="bg-white/5 border border-white/10 rounded px-2 py-1 w-full text-slate-300 focus:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                                     >
                                 </td>
@@ -421,36 +423,6 @@
 
     </div>
 
-    <!-- FILE UPLOAD MODAL (Loading State Enabled) -->
-    <div v-if="showUpload" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
-        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center relative border border-white/10">
-            
-            <!-- CLOSE BUTTON (Hidden when loading) -->
-            <button v-if="!isUploading" @click="showUpload = false" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-            
-            <!-- LOADING STATE -->
-            <div v-if="isUploading" class="flex flex-col items-center justify-center py-8">
-                <i class="ph-bold ph-spinner animate-spin text-5xl text-indigo-400 mb-6"></i>
-                <h3 class="text-xl font-bold text-white tracking-wide">Ingesting Data Stream</h3>
-                <p class="text-slate-400 text-sm mt-3 animate-pulse">Running normalization engine & validating schema...</p>
-            </div>
-
-            <!-- DEFAULT UPLOAD STATE -->
-            <div v-else>
-                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                    <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
-                <p class="text-slate-400 mb-8">Upload CSV, JSON, or TSV files to feed the Decision Engine.</p>
-                <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json,.tsv,.txt">
-                <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
-                    <i class="ph-bold ph-upload-simple"></i> Select File
-                </button>
-                <p class="mt-4 text-xs text-slate-500 font-mono">AUTO-NORMALIZATION ACTIVE</p>
-            </div>
-        </div>
-    </div>
-
     <!-- DECISION INTELLIGENCE MODAL (Root Cause & Action) -->
     <div v-if="selectedInsight" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in zoom-in-95">
         <div class="glass-panel p-8 rounded-3xl max-w-xl w-full relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
@@ -517,8 +489,6 @@
                 view: 'dashboard',
                 industry: 'SaaS',
                 privacyMode: false,
-                showUpload: false,
-                isUploading: false,
                 isThinking: false,
                 prompt: '',
                 healthScore: 78,
@@ -669,31 +639,34 @@
                 if(!this.prompt) return;
                 this.isThinking = true;
                 
-                setTimeout(() => {
-                    this.isThinking = false;
-                    const p = this.prompt.toLowerCase();
-                    
-                    // AI LOGIC: UPDATES GRID DATA DIRECTLY
-                    if (p.includes('generate') || p.includes('dashboard')) {
-                        // Create fake "New" data
-                        this.view = 'dashboard';
-                        this.healthScore = 95;
-                        this.gridHeaders = ['Month', 'New Metric A', 'New Metric B'];
-                        this.gridData = [
-                            { Month: 'Q1', 'New Metric A': 500, 'New Metric B': 200 },
-                            { Month: 'Q2', 'New Metric A': 750, 'New Metric B': 400 },
-                            { Month: 'Q3', 'New Metric A': 1000, 'New Metric B': 600 }
-                        ];
-                        this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
-                        this.prompt = '';
-                    } else if(p.includes('simulate')) {
-                        this.runSimulation();
-                        this.prompt = '';
-                    } else {
-                        alert(`Zenith AI: I have processed your request. See Action Plan for details.`);
-                        this.prompt = '';
-                    }
-                }, 1200);
+                // Instant Response for better UX
+                const p = this.prompt.toLowerCase();
+                this.isThinking = false;
+                
+                // AI LOGIC: UPDATES GRID DATA DIRECTLY
+                if (p.includes('generate') || p.includes('dashboard')) {
+                    // Create fake "New" data
+                    this.view = 'dashboard';
+                    this.healthScore = 95;
+                    this.gridHeaders = ['Month', 'New Metric A', 'New Metric B'];
+                    this.gridData = [
+                        { Month: 'Q1', 'New Metric A': 500, 'New Metric B': 200 },
+                        { Month: 'Q2', 'New Metric A': 750, 'New Metric B': 400 },
+                        { Month: 'Q3', 'New Metric A': 1000, 'New Metric B': 600 }
+                    ];
+                    this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'Dashboard Generation', logic: 'NLP Prompt Processing' });
+                    this.prompt = '';
+                } else if(p.includes('simulate')) {
+                    this.runSimulation();
+                    this.prompt = '';
+                } else {
+                    // Fallback to avoid silence
+                    this.view = 'dashboard';
+                    this.healthScore = 99;
+                    this.topInsights = [{ type: 'opp', message: 'Insight Generated from Prompt', rootCause: 'User Request', recommendation: 'Review Metrics', impact: 'N/A', confidence: 100 }];
+                    this.auditLogs.unshift({ time: 'Just now', user: 'Zenith AI', action: 'General Query', logic: 'Executed: ' + this.prompt });
+                    this.prompt = '';
+                }
             },
             openActionModal(insight) {
                 this.selectedInsight = insight;
@@ -785,6 +758,9 @@
                         this.topInsights = [
                             { type: growth > 0 ? 'opp' : 'risk', message: `Detected ${growth}% variance in ${firstMetric}`, rootCause: 'Imported Data Trend', recommendation: 'Review anomalies.', impact: 'High', confidence: 90 }
                         ];
+
+                        // FORCE CHART RESET
+                        this.initChart();
 
                         console.log("File loaded.");
                         if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 

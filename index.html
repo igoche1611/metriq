@@ -113,5 +113,366 @@ const ChartWidget = ({ type, data, xKey, yKey, color = "#3b82f6", simulation }) 
         
         {(type === 'line' || type === 'area') && (
            <polyline 
-             points={pointsStr}
+             points={pointsStr} 
+             fill="none" 
+             stroke={color} 
+             strokeWidth="3" 
+             strokeLinecap="round" 
+             strokeLinejoin="round" 
+           />
+        )}
+
+        {type === 'bar' && data.map((d, i) => {
+           const barH = ((processValue(d[yKey]) - min) / (max - min || 1)) * h;
+           const barW = (w / data.length) * 0.6;
+           const x = (i / data.length) * w + (barW/2);
+           return (
+             <rect 
+               key={i} 
+               x={x} 
+               y={h - barH} 
+               width={barW} 
+               height={barH} 
+               fill={color} 
+               rx="2"
+               className="hover:opacity-80 transition-opacity"
+             />
+           )
+        })}
+      </svg>
+      {/* Tooltip Overlay */}
+      <div className="absolute top-0 right-0 text-xs font-bold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+        {yKey}
+      </div>
+    </div>
+  );
+};
+
+// --- DATA & MOCKING ---
+const DEFAULT_CSV = `Month,Revenue,Expenses,Users,Churn
+Jan,12000,8000,500,20
+Feb,15000,8500,600,18
+Mar,11000,7500,450,25
+Apr,18000,9200,800,15
+May,22000,10500,1000,12
+Jun,19000,9800,1100,14
+Jul,26000,12000,1300,10
+Aug,29000,13000,1450,9
+Sep,31000,14000,1600,8
+Oct,28000,13500,1550,11
+Nov,35000,15000,1800,7
+Dec,42000,18000,2100,5`;
+
+export default function MetriqAI() {
+  const [user, setUser] = useState(null);
+  const [isPro, setIsPro] = useState(false);
+  const [view, setView] = useState('dashboard'); 
+  
+  // Data State
+  const [dataText, setDataText] = useState(DEFAULT_CSV);
+  const [dataset, setDataset] = useState([]);
+  const [cols, setCols] = useState({ num: [], cat: [] });
+  
+  // AI & Dashboard State
+  const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [widgets, setWidgets] = useState([
+    { id: 1, type: 'area', xKey: 'Month', yKey: 'Revenue', title: 'Revenue Trend', width: 'col-span-2' },
+    { id: 2, type: 'kpi', xKey: 'Month', yKey: 'Revenue', title: 'Total Revenue', width: 'col-span-1' },
+    { id: 3, type: 'bar', xKey: 'Month', yKey: 'Users', title: 'User Growth', width: 'col-span-1' },
+    { id: 4, type: 'line', xKey: 'Month', yKey: 'Expenses', title: 'Cost Analysis', width: 'col-span-2' },
+  ]);
+
+  // Enterprise Simulation State
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [simulation, setSimulation] = useState({ revenueMod: 0, costMod: 0 });
+
+  const fileInputRef = useRef(null);
+
+  // --- AUTH & INIT ---
+  useEffect(() => {
+    const init = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    init();
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) checkProStatus(u.uid);
+    });
+  }, []);
+
+  const checkProStatus = (uid) => {
+    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'users', uid), (doc) => {
+      if (doc.exists() && doc.data().isPro) setIsPro(true);
+    });
+    return () => unsub();
+  };
+
+  // --- DATA PROCESSING ---
+  useEffect(() => {
+    const lines = dataText.trim().split('\n');
+    if (lines.length > 1) {
+      const headers = lines[0].split(',').map(h => h.trim());
+      const parsed = lines.slice(1).map(line => {
+        const vals = line.split(',');
+        const obj = {};
+        headers.forEach((h, i) => {
+          let v = vals[i]?.trim();
+          if (v && !isNaN(Number(v))) v = Number(v);
+          obj[h] = v;
+        });
+        return obj;
+      });
+      setDataset(parsed);
+      
+      const keys = Object.keys(parsed[0]);
+      const num = keys.filter(k => typeof parsed[0][k] === 'number');
+      const cat = keys.filter(k => !num.includes(k));
+      setCols({ num, cat });
+    }
+  }, [dataText]);
+
+  // --- AI GENERATOR ENGINE ---
+  const handlePromptSubmit = (e) => {
+    e.preventDefault();
+    setIsGenerating(true);
+    
+    // Simulate AI Latency
+    setTimeout(() => {
+      const p = prompt.toLowerCase();
+      let newWidgets = [];
+      const xKey = cols.cat[0] || 'id';
+
+      // Simple NLP Heuristics (The "AI")
+      if (p.includes('sales') || p.includes('revenue')) {
+        newWidgets.push({ id: 101, type: 'area', xKey, yKey: cols.num.find(c => c.toLowerCase().includes('rev') || c.toLowerCase().includes('sales')) || cols.num[0], title: 'Revenue Overview', width: 'col-span-2' });
+      }
+      
+      if (p.includes('growth') || p.includes('trend')) {
+         cols.num.forEach((col, idx) => {
+            if(idx < 2) newWidgets.push({ id: 200+idx, type: 'line', xKey, yKey: col, title: `${col} Trend`, width: 'col-span-1' });
+         });
+      }
+
+      if (p.includes('summary') || p.includes('kpi') || p.includes('overview')) {
+         cols.num.forEach((col, idx) => {
+           if (idx < 3) newWidgets.push({ id: 300+idx, type: 'kpi', xKey, yKey: col, title: `Total ${col}`, width: 'col-span-1' });
+         });
+      }
+
+      if (p.includes('compare') || p.includes('vs')) {
+        newWidgets.push({ id: 401, type: 'bar', xKey, yKey: cols.num[0], title: cols.num[0], width: 'col-span-1' });
+        newWidgets.push({ id: 402, type: 'bar', xKey, yKey: cols.num[1], title: cols.num[1], width: 'col-span-1' });
+      }
+
+      // Default fallback if AI is confused
+      if (newWidgets.length === 0) {
+        newWidgets = [
+           { id: 99, type: 'area', xKey, yKey: cols.num[0], title: `Analysis of ${cols.num[0]}`, width: 'col-span-2' },
+           { id: 98, type: 'bar', xKey, yKey: cols.num[1] || cols.num[0], title: 'Secondary Metric', width: 'col-span-1' }
+        ];
+      }
+
+      setWidgets(newWidgets);
+      setIsGenerating(false);
+      setPrompt('');
+    }, 800);
+  };
+
+  const handleUpgrade = async () => {
+    if(!user) return;
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid), { isPro: true }, { merge: true });
+    alert("Enterprise Features Unlocked!");
+  };
+
+  const downloadDashboard = () => {
+    // Generate a downloadable JSON blob of the current configuration
+    const exportObj = {
+      title: "Metriq Dashboard Export",
+      generatedAt: new Date().toISOString(),
+      widgets: widgets,
+      data: dataset,
+      simulationParams: simulation
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "metriq_executive_brief.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex">
+      
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-screen sticky top-0">
+        <div className="p-6 flex items-center gap-2 text-white">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/50">M</div>
+          <span className="font-bold text-xl tracking-tight">Metriq AI</span>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2 mt-4">
+          <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
+            <Layout size={20} />
+            <span className="font-medium">Command Center</span>
+          </button>
+          
+          <button onClick={() => setShowSimulator(!showSimulator)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${showSimulator ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-slate-800'}`}>
+            <Sliders size={20} />
+            <div className="flex flex-col items-start text-left">
+              <span className="font-medium">Simulator</span>
+              {isPro ? <span className="text-[10px] text-indigo-200">Enterprise Active</span> : <span className="text-[10px] text-slate-500 flex items-center gap-1"><Lock size={8}/> Locked</span>}
+            </div>
+          </button>
+        </nav>
+        
+        {!isPro && (
+          <div className="p-4">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 text-white text-center">
+              <Crown className="mx-auto mb-2 text-yellow-300" size={20} />
+              <p className="font-bold text-sm">Enterprise Tier</p>
+              <button onClick={handleUpgrade} className="mt-3 w-full bg-white text-indigo-600 text-xs font-bold py-2 rounded-lg hover:bg-indigo-50">
+                Unlock Simulator
+              </button>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 overflow-y-auto relative">
+        
+        {/* TOP BAR */}
+        <header className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-20 flex justify-between items-center bg-white/80 backdrop-blur-md">
+          <div className="flex items-center gap-4 text-sm text-slate-500">
+             <span className="font-mono bg-slate-100 px-2 py-1 rounded">{dataset.length} Rows</span>
+             <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-emerald-500"/> Data Healthy</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+              <UploadCloud size={16} /> Import CSV
+            </button>
+            <input type="file" ref={fileInputRef} onChange={(e) => {
+              const r = new FileReader();
+              r.onload = (ev) => setDataText(ev.target.result);
+              if(e.target.files[0]) r.readAsText(e.target.files[0]);
+            }} className="hidden" />
+            
+            <button onClick={downloadDashboard} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-lg">
+              <Download size={16} /> Export Brief
+            </button>
+          </div>
+        </header>
+
+        {/* AI COMMAND BAR */}
+        <div className="px-8 pt-8 pb-4">
+          <form onSubmit={handlePromptSubmit} className="relative max-w-3xl mx-auto group">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+              {isGenerating ? <RefreshCw size={20} className="text-blue-500 animate-spin"/> : <Sparkles size={20} className="text-blue-500"/>}
+            </div>
+            <input 
+              type="text" 
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Ask Metriq to build a view (e.g., 'Show me revenue growth vs expenses')" 
+              className="w-full pl-12 pr-4 py-4 text-lg bg-white border-2 border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+            />
+            <button type="submit" className="absolute right-3 top-3 bottom-3 bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-colors">
+              Generate
+            </button>
+          </form>
+          
+          <div className="max-w-3xl mx-auto mt-3 flex gap-2 overflow-x-auto pb-2">
+            {["Show KPI Summary", "Compare Sales vs Cost", "Analyze User Growth"].map(txt => (
+              <button key={txt} onClick={() => setPrompt(txt)} className="text-xs font-medium bg-white border border-slate-200 px-3 py-1 rounded-full text-slate-500 hover:border-blue-300 hover:text-blue-600 whitespace-nowrap transition-colors">
+                {txt}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* SIMULATION PANEL (ENTERPRISE) */}
+        {showSimulator && isPro && (
+          <div className="mx-8 mb-6 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl animate-in slide-in-from-top-4">
+            <div className="flex items-center justify-between mb-4">
+               <h3 className="font-bold text-indigo-900 flex items-center gap-2"><Sliders size={18}/> Scenario Simulator</h3>
+               <button onClick={() => setSimulation({ revenueMod: 0, costMod: 0 })} className="text-xs font-bold text-indigo-600 hover:underline">Reset Default</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label className="flex justify-between text-sm font-bold text-indigo-800 mb-2">
+                  <span>Pricing Strategy Impact</span>
+                  <span className="bg-white px-2 rounded text-indigo-600">{simulation.revenueMod > 0 ? '+' : ''}{simulation.revenueMod}%</span>
+                </label>
+                <input 
+                  type="range" min="-50" max="50" 
+                  value={simulation.revenueMod}
+                  onChange={(e) => setSimulation({...simulation, revenueMod: Number(e.target.value)})}
+                  className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <p className="text-xs text-indigo-400 mt-1">Adjusting projected revenue based on pricing changes.</p>
+              </div>
+              <div>
+                <label className="flex justify-between text-sm font-bold text-indigo-800 mb-2">
+                  <span>Operational Efficiency</span>
+                  <span className="bg-white px-2 rounded text-indigo-600">{simulation.costMod > 0 ? '+' : ''}{simulation.costMod}%</span>
+                </label>
+                <input 
+                  type="range" min="-50" max="50" 
+                  value={simulation.costMod}
+                  onChange={(e) => setSimulation({...simulation, costMod: Number(e.target.value)})}
+                  className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <p className="text-xs text-indigo-400 mt-1">Adjusting expense ratios based on cost-cutting.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DASHBOARD GRID */}
+        <div className="p-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {widgets.map(widget => (
+              <div key={widget.id} className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow ${widget.width}`}>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-bold text-slate-700">{widget.title}</h3>
+                  <button onClick={() => setWidgets(widgets.filter(w => w.id !== widget.id))} className="text-slate-300 hover:text-red-400">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <div className="h-40">
+                  <ChartWidget 
+                    type={widget.type} 
+                    data={dataset} 
+                    xKey={widget.xKey} 
+                    yKey={widget.yKey} 
+                    simulation={showSimulator && isPro ? simulation : null}
+                  />
+                </div>
+              </div>
+            ))}
+            
+            {/* Add Widget Button */}
+            <button 
+              onClick={() => document.querySelector('input[type="text"]').focus()}
+              className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50/50 transition-all h-56"
+            >
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                <Command size={20} />
+              </div>
+              <span className="font-bold">Ask AI to add a widget</span>
+            </button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  );
+}
 

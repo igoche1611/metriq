@@ -435,8 +435,8 @@
                     <i class="ph-duotone ph-cloud-arrow-up text-4xl text-indigo-400"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-white mb-2">Connect Data Source</h2>
-                <p class="text-slate-400 mb-8">Upload CSV or JSON files to feed the Decision Engine.</p>
-                <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json">
+                <p class="text-slate-400 mb-8">Upload CSV, JSON, or TSV files to feed the Decision Engine.</p>
+                <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept=".csv,.json,.tsv,.txt">
                 <button @click="$refs.fileInput.click()" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2">
                     <i class="ph-bold ph-upload-simple"></i> Select File
                 </button>
@@ -741,66 +741,97 @@
                 
                 // SET LOADING STATE
                 this.isUploading = true;
+                const extension = file.name.split('.').pop().toLowerCase();
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    // DELAY TO SHOW ANIMATION
                     setTimeout(() => {
-                        const text = e.target.result;
-                        const lines = text.trim().split('\n').filter(line => line.trim() !== ''); // Remove empty lines
-                        if (lines.length < 2) {
-                            alert("Invalid CSV format.");
-                            this.isUploading = false;
-                            return;
-                        }
+                        try {
+                            const content = e.target.result;
+                            if (!content) throw new Error("Empty file");
 
-                        const headers = lines[0].split(',').map(h => h.trim());
-                        
-                        const newData = [];
-                        const categories = [];
-                        const dynamicSeries = []; 
-                        
-                        // Initialize dynamic series based on headers (skipping first col)
-                        for(let j=1; j<headers.length; j++) {
-                            dynamicSeries.push({ name: headers[j], data: [] });
-                        }
+                            let newData = [];
+                            let headers = [];
 
-                        for(let i=1; i<lines.length; i++) {
-                            const row = lines[i].split(',');
-                            if(row.length < headers.length) continue; // Skip incomplete rows
-                            
-                            const rowObj = {};
-                            headers.forEach((h, idx) => {
-                                rowObj[h] = row[idx] || '';
-                            });
-                            newData.push(rowObj);
-                            categories.push(row[0]);
-                            
-                            for(let j=1; j<headers.length; j++) {
-                                // Ensure we have a series for this column
-                                if(dynamicSeries[j-1]) {
-                                    dynamicSeries[j-1].data.push(Number(row[j]) || 0);
+                            if (extension === 'json') {
+                                // JSON Parsing Strategy
+                                const parsed = JSON.parse(content);
+                                if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("JSON must be an array of objects.");
+                                
+                                headers = Object.keys(parsed[0]);
+                                newData = parsed;
+                            } else {
+                                // CSV / TSV Parsing Strategy
+                                const delimiter = (extension === 'tsv' || extension === 'txt') ? '\t' : ',';
+                                const lines = content.trim().split('\n').filter(line => line.trim() !== '');
+                                if (lines.length < 2) throw new Error("Invalid format: Need headers and data rows.");
+
+                                headers = lines[0].split(delimiter).map(h => h.trim());
+                                if (headers.length < 2) throw new Error("Invalid format: Need at least 2 columns.");
+
+                                for(let i=1; i<lines.length; i++) {
+                                    const row = lines[i].split(delimiter);
+                                    if(row.length < headers.length) continue; // Skip incomplete
+                                    
+                                    const rowObj = {};
+                                    headers.forEach((h, idx) => {
+                                        // Store as string/number safely
+                                        let val = row[idx] ? row[idx].trim() : '';
+                                        // Attempt number conversion for cleanliness in object, but keep as is mostly
+                                        rowObj[h] = val;
+                                    });
+                                    newData.push(rowObj);
                                 }
                             }
-                        }
 
-                        // Update State
-                        this.gridHeaders = headers;
-                        this.gridData = newData;
-                        this.series = dynamicSeries;
-                        
-                        // Update Chart
-                        if (this.chartInstance) {
-                            this.chartInstance.updateOptions({ xaxis: { categories: categories }});
-                            this.chartInstance.updateSeries(dynamicSeries);
-                        }
+                            // Generate Series for Charting (Logic shared across formats)
+                            const categories = [];
+                            const dynamicSeries = []; 
+                            
+                            // Initialize dynamic series based on headers (skipping first col = Category/X-Axis)
+                            for(let j=1; j<headers.length; j++) {
+                                dynamicSeries.push({ name: headers[j], data: [] });
+                            }
 
-                        console.log("File loaded. Grid populated.");
-                        
-                        // REMOVE ALERT, JUST CLOSE MODAL
-                        this.isUploading = false;
-                        this.showUpload = false;
-                    }, 1500);
+                            // Populate series data
+                            newData.forEach(row => {
+                                categories.push(row[headers[0]]); // First column is X-axis label
+                                
+                                for(let j=1; j<headers.length; j++) {
+                                    if(dynamicSeries[j-1]) {
+                                        // Strict number parsing: remove currency symbols, commas if present in string
+                                        let rawVal = row[headers[j]];
+                                        if (typeof rawVal === 'string') {
+                                            rawVal = rawVal.replace(/[$,]/g, '');
+                                        }
+                                        const val = parseFloat(rawVal);
+                                        dynamicSeries[j-1].data.push(isNaN(val) ? 0 : val);
+                                    }
+                                }
+                            });
+
+                            // Update Application State
+                            this.gridHeaders = headers;
+                            this.gridData = newData;
+                            this.series = dynamicSeries;
+                            
+                            // Update Chart
+                            if (this.chartInstance) {
+                                this.chartInstance.updateOptions({ xaxis: { categories: categories }});
+                                this.chartInstance.updateSeries(dynamicSeries);
+                            }
+
+                            console.log("File loaded. Grid populated.");
+                            
+                        } catch (err) {
+                            console.error(err);
+                            alert("Error parsing file: " + err.message);
+                        } finally {
+                            this.isUploading = false;
+                            this.showUpload = false;
+                            if (this.$refs.fileInput) this.$refs.fileInput.value = ''; 
+                        }
+                    }, 1500); // 1.5s delay for effect
                 };
                 reader.readAsText(file);
             },
